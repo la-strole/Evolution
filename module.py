@@ -6,11 +6,12 @@ Created on 15 10 2017
 from random import shuffle, randint
 
 
-class player():
+class Player:
     """ Player container of animals. """
 
     def __init__(self):
-
+        # self.first_hand = []
+        # i.first_hand = take_cards(6)
         self.cards_hand = []
         self.animals = []  # list of animls = amimal()
         self.grazing_count = 0  # count of 'topo' on hand
@@ -18,8 +19,9 @@ class player():
         self.name = "default_name"
 
 
-class animal():
+class Animal:
     def __init__(self):
+        self.animal_id = animal_id
         self.property = []
         self.hungry = 1  # change to 1 0 - for test
         self.fat = 0  # zhir
@@ -57,11 +59,11 @@ class animal():
 #    return(randint(0,count_of_players-1)) 
 
 
-# define next active player, change global active num
+# define next active Player, change global active num
 
 
 def next_player(num):
-    """Select next player.  """
+    """Select next Player.  """
     # global active_num
     if len(players_list) > num + 1:
         # active_player = players_list[num +1]
@@ -73,28 +75,24 @@ def next_player(num):
 
 
 # take "number" cards from koloda and return them
-def take_cards(number, koloda):
-    """Take <number> of cards from <koloda> and return it.  """
-    iset = []
-    if type(number) == int and number >= 0:
+def take_cards(number: int, card_set: list) -> list:
+    """Take <number> of cards from <card_set> and return it.  """
+    if number >= 0:
         try:
-            for i in range(number):
-                iset.append(koloda.pop())
+            return [card_set.pop() for i in range(number)]
         except IndexError:
             print("end of cards!")
-        else:
-            return (iset)
     else:
-        print("error with type of number in take_cards function")
+        print('error with type of number in take_cards function')
         raise IndexError
 
 
 def take_handcard(player, **kwargs):
-    """Take card from <player>'s hand and return it (player - active_player).  """
+    """Take card from <Player>'s hand and return it (Player - active_player).  """
     if player.cards_hand:
 
         while 1:
-            # Return number of card from player's hand.
+            # Return number of card from Player's hand.
             try:
                 print("your hand is:", player.cards_hand)
                 if 'test' in kwargs.keys():
@@ -102,44 +100,44 @@ def take_handcard(player, **kwargs):
                 else:
                     card_num = int(input("choose card's number")) - 1
                 if 0 <= card_num < len(player.cards_hand):
+                    card = player.cards_hand.pop(card_num)
                     break
                 else:
                     print("try again")
             except:
                 print("error, try again")
                 continue
-        card = player.cards_hand.pop(card_num)
         return card
     else:
-        print("this player hasn't any cards!")
+        print("this Player hasn't any cards!")
         raise IndexError
 
 
 def make_animal(player):
-    print("Adding new animal to you")
-    new_animal = animal()
+    print("Adding new Animal to you")
+    new_animal = Animal()
     player.animals.append(new_animal)
     for i in range(len(player.animals)):
-        print('animal', i + 1, ':', player.animals[i].property)
-        # for i in player.animals:
+        print('Animal', i + 1, ':', player.animals[i].property)
+        # for i in Player.animals:
     return 1
 
 
 def make_parasite(players_list, active_num, **kwargs):
-    """Set parasite to another player.  """
+    """Set parasite to another Player.  """
     for i in range(len(players_list)):
-        print(i + 1, " ", players_list[i].name, '\n', "animals:\n")
+        print (i + 1, " ", players_list[i].name, '\n', "animals:\n")
         for item in range(len(players_list[i].animals)):
-            print("animal", item + 1, players_list[i].animals[item].property)
+            print("Animal", item + 1, players_list[i].animals[item].property)
     print("=" * 40, "\n")
-    print("this property you can set only to another player's animal")
+    print("this property you can set only to another Player's Animal")
     while 1:  # Main loop.
         try:
             want_next_loop = 0
-            if 'player' in kwargs.keys():
-                player = kwargs['player']
+            if 'Player' in kwargs.keys():
+                player = kwargs['Player']
             else:
-                player = int(input("input number of player")) - 1
+                player = int(input("input number of Player")) - 1
             if player == active_num:
                 print("you can't set 'parasite' property to your own animals!\
                         try again!")
@@ -148,20 +146,20 @@ def make_parasite(players_list, active_num, **kwargs):
                 print("wrong number, plese try again!")
                 continue  # Main loop.
             else:
-                while 1:  # Choose animal loop.
-                    if 'animal' in kwargs.keys():
-                        animal = kwargs['animal']
+                while 1:  # Choose Animal loop.
+                    if 'Animal' in kwargs.keys():
+                        animal = kwargs['Animal']
                     else:
-                        animal = int(input("input number of animal")) - 1
+                        animal = int(input("input number of Animal")) - 1
                     if 0 <= animal < len(players_list[player].animals):
                         if players_list[player].animals[animal].parasite == 0:
                             players_list[player].animals[animal].property.append("para")
                             players_list[player].animals[animal].parasite += 1
                             players_list[player].animals[animal].hungry += 2
                             print(players_list[player].animals[animal].property)
-                            break  # Choose animal loop.
+                            break  # Choose Animal loop.
                         else:
-                            print("error - each animal has only one parasite")
+                            print("error - each Animal has only one parasite")
                             while 1:  # Little loop.
 
                                 if 'ret_card' in kwargs.keys():
@@ -175,24 +173,24 @@ def make_parasite(players_list, active_num, **kwargs):
                                     want_next_loop = 1
                                     break  # Little loop.
                                 else:
-                                    print("please, say 'y' or 'n'")
+                                    print ("please, say 'y' or 'n'")
                                     continue  # Little loop.
-                            break  # Choose animal loop.
+                            break  # Choose Animal loop.
                     print("something wrong with animals number, try again!")
-                    continue  # Choose animal loop.
+                    continue  # Choose Animal loop.
                 if want_next_loop == 1:
                     # print("want_next_loop")# for test.py
                     continue  # Main loop.
             break  # Main loop.
         except:
-            print("exception input number of players or animal! try again")
+            print("exception input number of players or Animal! try again")
             continue  # Main loop.
     return 1
 
 
 def make_property(player, card, players_list, active_num, **kwargs):
-    # player = player() or players_list[i]
-    """ Defines the property for player's animal players_list and active_num -
+    # Player = Player() or players_list[i]
+    """ Defines the property for Player's Animal players_list and active_num -
         for function make_parasite.
           
     """
@@ -253,7 +251,7 @@ def make_property(player, card, players_list, active_num, **kwargs):
             current_animal = player.animals[choise]
             if property_value in current_animal.property:
                 # Not dubles.
-                print("This animal already has this property! choose another animal!")
+                print("This Animal already has this property! choose another Animal!")
                 if testoption:
                     ret_card = kwargs['ret_card']
                 else:
@@ -275,7 +273,7 @@ def make_property(player, card, players_list, active_num, **kwargs):
                 else:
                     continue  # Test for single properies loop.
             elif (property_value == "hish") and ("pada" in current_animal.property):
-                print("your animal has padalshik property it can't be hish!")
+                print("your Animal has padalshik property it can't be hish!")
                 ret_card = input("do you want to return youra card to your hand? y/n")
                 if testoption:
                     ret_card = kwargs['ret_card']
@@ -357,13 +355,13 @@ def make_property(player, card, players_list, active_num, **kwargs):
     else:  # If property is double.
         property_value = property_value.copy()
         if lenght_player_animals < 2:
-            print("Error - you can't apply this property because you have\
-                    only one animal")
+            print ("Error - you can't apply this property because you have\
+                    only one Animal")
             player.cards_hand.append(card)
             return 0
         elif property_value == ["sotr"]:
             for i in range(lenght_player_animals):
-                print("animal ", i + 1, player.animals[i].property)
+                print ("Animal ", i + 1, player.animals[i].property)
             print("choose pair of animals (example: 1,3)")
             while 1:  # Choose sotr pair.
                 try:
@@ -403,8 +401,8 @@ def make_property(player, card, players_list, active_num, **kwargs):
                         else:
                             player.animals[choise[0] - 1].property.append(property_value)
                             player.animals[choise[1] - 1].property.append(property_value)
-                            print('animal', choise[0], ' ', player.animals[choise[0] - 1].property)
-                            print('animal', choise[1], ' ', player.animals[choise[1] - 1].property)
+                            print ('Animal', choise[0], ' ', player.animals[choise[0] - 1].property)
+                            print ('Animal', choise[1], ' ', player.animals[choise[1] - 1].property)
                             break  # Choose sotr pair loop.
 
                 except:
@@ -413,7 +411,7 @@ def make_property(player, card, players_list, active_num, **kwargs):
             return 1
         elif property_value == ["simb"]:
             for i in range(lenght_player_animals):
-                print("animal ", i + 1, player.animals[i].property)
+                print ("Animal ", i + 1, player.animals[i].property)
             print("choose pair of animals simiont/ne simbiont (example: 1,3)")
             while 1:  # Choose simb pair loop.
                 try:
@@ -453,8 +451,8 @@ def make_property(player, card, players_list, active_num, **kwargs):
                         else:
                             player.animals[choise[0] - 1].property.append(property_value)
                             player.animals[choise[1] - 1].property.append(property_value)
-                            print('animal', choise[0], ' ', player.animals[choise[0] - 1].property)
-                            print('animal', choise[1], ' ', player.animals[choise[1] - 1].property)
+                            print ('Animal', choise[0], ' ', player.animals[choise[0] - 1].property)
+                            print ('Animal', choise[1], ' ', player.animals[choise[1] - 1].property)
                             break  # Choose simb pair loop.
                 except:
                     print("exception choosing simbiont/ ne simbiont! try again!")
@@ -462,7 +460,7 @@ def make_property(player, card, players_list, active_num, **kwargs):
             return 1
         elif property_value == ["vzai"]:
             for i in range(lenght_player_animals):
-                print("animal ", i + 1, player.animals[i].property)
+                print ("Animal ", i + 1, player.animals[i].property)
             print("choose pair of animals vzaimodejstvie (example: 1,3)")
             while 1:  # Choose vzai pair loop.
                 try:
@@ -500,8 +498,8 @@ def make_property(player, card, players_list, active_num, **kwargs):
                         else:
                             player.animals[choise[0] - 1].property.append(property_value)
                             player.animals[choise[1] - 1].property.append(property_value)
-                            print('animal', choise[0], ' ', player.animals[choise[0] - 1].property)
-                            print('animal', choise[1], ' ', player.animals[choise[1] - 1].property)
+                            print ('Animal', choise[0], ' ', player.animals[choise[0] - 1].property)
+                            print ('Animal', choise[1], ' ', player.animals[choise[1] - 1].property)
                             break  # Choose vzai pair loop.
                 except:
                     print("exception choosing animals for vzai! try again!")
@@ -509,14 +507,14 @@ def make_property(player, card, players_list, active_num, **kwargs):
             return 1
 
 
-def makeplayerslist():
+def make_players_list():
     """Make players list = [] by default min 2 max 8. Return players_list.  """
-    players_list = []
-    while 1:
+    players = []
+    while True:
         try:
             number_of_players = int(input("input number of players (2...8)"))
             if (number_of_players >= 8) or (number_of_players < 2):
-                print("bad number, try again")
+                print ("bad number, try again")
             else:
                 break
         except ValueError:
@@ -524,82 +522,78 @@ def makeplayerslist():
         except NameError:
             print("name error! bad number of players, try again")
     for i in range(number_of_players):
-        players_list.append(player())  # List of instances of player class.
-        while 1:
+        players.append(Player())  # List of instances of Player class.
+        while True:
             try:
-                players_list[i].name = str(input("input player's name: "))
-                players_list[i].player_id = i
+                players[i].name = str(input("input Player's name: "))
+                players[i].player_id = i
                 break
             except ValueError:
                 print("try to input another name")
-    return players_list
+    return players
 
 
-def makecoloda(number_of_players):
-    """ Return kokloda - karti - set of cards,
+def make_koloda(number_of_players):
+    """ Return set_cards - cards - set of cards,
        number_of_players = len(plyers_list) -  above.  
-       
     """
 
-    karti = [("ostr", "zhir"), ("topo", "zhir"), ("para", "hish"), ("para", "zhir"),
+    cards = [("ostr", "zhir"), ("topo", "zhir"), ("para", "hish"), ("para", "zhir"),
              ("norn", "zhir"), (["sotr"], "hish"), (["sotr"], "zhir"), ("jado", "hish"),
              ("komm", "zhir"), ("spac", "hish"), ("mimi",), (["simb"],),
              ("pada",), ("pira",), ("otbr",), ("bist",), ("vodo",), ("vodo",),
              (["vzai"], "hish"), ("bols", "zhir"), ("bols", "hish")]
-    # Making koloda from cards and shuffling it,
-    # set twice 'koloda' for 5 - 8 players.  
-    koloda = []
+    # Making set_cards from cards and shuffling it,
+    # set twice 'set_cards' for 5 - 8 players.
     if number_of_players < 5:
-        item = 4
+        set_cards = cards * 4
     elif 5 <= number_of_players <= 8:
-        item = 8
+        set_cards = cards * 8
     else:
         print("looks like this is something wrong with number_players!")
-        raise (ValueError)
-    for i in karti:
-        for k in range(item):
-            koloda.append(i)
-    shuffle(koloda)
-    return koloda
+        raise(ValueError)
+    shuffle(set_cards)
+    return set_cards
 
 
-def make_first_hand(players_list, koloda):
-    """take 6 random cards from koloda to each player"""
-    for player in players_list:
-        player.cards_hand = take_cards(6, koloda)
+def make_first_hand(players: list, card_set: list):
+    """take 6 random cards from card_set to each Player"""
+
+    for player in players:
+        player.cards_hand = take_cards(6, card_set)
     return 1
 
 
-def faza_razvitija(players_list, number):
+def faza_razvitija(players, number):
     list_of_pass = []
-    active_player = players_list[number]
+    active_player = players[number]
     global animal_id
     while 1:
         # Main loop.          
-        if len(list_of_pass) == len(players_list):
+        if len(list_of_pass) == len(players):
             print("All players said PASS")
             break  # Exit from main loop.
 
-        if number in list_of_pass:  # If active player say PASS.
+        elif number in list_of_pass:  # If active Player say PASS.
             number = next_player(number)
-            active_player = players_list[number]
-            continue  # Contunie main loop with next actie player.
-        else:  # If active player don't say PASS.
+            active_player = players[number]
+            continue  # Contunie main loop with next actie Player.
+        else:  # If active Player don't say PASS.
             if not active_player.cards_hand:
-                # If player hasn't cards in his hand - automatic PASS.
+                # If Player hasn't cards in his hand - automatic PASS.
                 list_of_pass.append(number)
                 number = next_player(number)
-                active_player = players_list[number]
-                continue  # Contunie main loop with next actie player.
+                active_player = players[number]
+                continue  # Contunie main loop with next actie Player.
 
-            print("active player ", active_player.name, "=" * 20, "\n")
-            print("player's hand: ", active_player.cards_hand)
+            print("active Player ", active_player.name, "=" * 20, "\n")
+            print("Player's hand: ", active_player.cards_hand)
             if active_player.animals:
 
                 for i in active_player.animals:
-                    print('animal:', i.property)
+                    print('Animal:', i.property)
             else:
-                print("you haven't animals yet")
+                print ("you haven't animals yet")
             while 1:  # Loop for unsuitable properties -
                 #  to posibility of returning card to koloda.
                 # animal_id = 0
@@ -618,23 +612,23 @@ def faza_razvitija(players_list, number):
                             print('exception yes/no pass fraza! try again!')
                     if number in list_of_pass:
                         break  # Exit from loop 'suitable'.
-                    while 1:  # Loop of choose animal/property.
+                    while 1:  # Loop of choose Animal/property.
                         flag_suit = 0
                         try:
-                            choise = input("do you want to make new animal or\
+                            choise = input("do you want to make new Animal or\
                                            new property? (a/p)")
                             if choise == 'A' or choise == 'a':
                                 take_handcard(active_player)
                                 make_animal(active_player)
                                 animal_id += 1
                                 flag_suit = 1
-                                break  # Exit from loop of choose animal/property.
+                                break  # Exit from loop of choose Animal/property.
                             elif choise == 'P' or choise == 'p':
-                                # If you can set property to the animal:
+                                # If you can set property to the Animal:
                                 flag_suit = make_property(active_player,
                                                           take_handcard(active_player),
-                                                          players_list, number)
-                                break  # Exit from loop of choose animal/property.
+                                                          players, number)
+                                break  # Exit from loop of choose Animal/property.
                             else:
                                 print("try again!")
                         except:
@@ -646,98 +640,96 @@ def faza_razvitija(players_list, number):
                         #  hand in function make_property.
 
                 else:  # If you don't have any animals.
-                    print("now you have to make your first animal from your hand")
+                    print("now you have to make your first Animal from your hand")
                     take_handcard(active_player)
                     make_animal(active_player)
                     animal_id += 1
                     break  # Exit from loop 'suitable'.
             number = next_player(number)
-            active_player = players_list[number]
+            active_player = players[number]
             continue  # Loop 'mainloop'.
 
-    for i in range(len(players_list)):
-        print(players_list[i].name, '\n', "animals:\n")
-        for item in range(len(players_list[i].animals)):
-            print("animal", item + 1, players_list[i].animals[item].property,
-                  "hungry=", players_list[i].animals[item].hungry)
+    for i in range(len(players)):
+        print (players[i].name, '\n', "animals:\n")
+        for item in range(len(players[i].animals)):
+            print("Animal", item + 1, players[i].animals[item].property,
+                  "hungry=", players[i].animals[item].hungry)
         print("=" * 20, "\n")
     print("end of faza razvitije")
     return 1
 
-    # =========================================================================
-    #                      FAZA OPREDELENIJA KORMOVOJ BAZY
 
-
-def faza_opr_korm(number):
-    """ take as argument count of players (len(players_list) and depend on it return count of red fish"""
-
-    if number == 2:
-        red_fish = randint(1, 6) + 2
-    elif number == 3:
-        red_fish = randint(1, 6) + randint(1, 6)
-    elif number == 4:
-        red_fish = randint(1, 6) + randint(1, 6) + 2
-    elif number == 5:
-        red_fish = randint(1, 6) + randint(1, 6) + randint(1, 6) + 2
-    elif number == 6:
-        red_fish = randint(1, 6) + randint(1, 6) + randint(1, 6) + 4
-    elif number == 7:
-        red_fish = randint(1, 6) + randint(1, 6) + randint(1, 6) + randint(1, 6) + randint(1, 4) + 2
-    elif number == 8:
-        red_fish = randint(1, 6) + randint(1, 6) + randint(1, 6) + randint(1, 6) + randint(1, 4) + 4
-    else:
-        print("you have too mach players")
-        return 0
-    print(f"{'-'*5}You have {red_fish} items to eat! {'-'*5}")
-    return red_fish
-
-
-animal_id = 0  # Global - for different  animal id in animal class -
+animal_id = 0  # Global - for different  Animal id in Animal class -
 # increments 2 times in global in faza razvitija function.
 if __name__ == "__main__":
-    players_list = makeplayerslist()
-    # players_list - list of instances of class "player"
-    koloda = makecoloda(len(players_list))
+    players_list = make_players_list()
+    # players_list - list of instances of class "Player"
+    koloda = make_koloda(len(players_list))
     make_first_hand(players_list, koloda)
     active_num = randint(0, len(players_list) - 1)
     first_num = active_num  # For faza pitanije.
     faza_razvitija(players_list, active_num)
-    faza_opr_korm(len(players_list))
 
-
+    """    
+    #=========================================================================
+    #                      FAZA OPREDELENIJA KORMOVOJ BAZY
+    
+    length_player_list=len(players_list)
+    if length_player_list == 2:
+        red_fish = randint(1,6) + 2
+    elif length_player_list == 3:
+        red_fish = randint(1,6) + randint(1,6)
+    elif length_player_list == 4:
+        red_fish = randint(1,6) + randint(1,6) + 2
+    elif length_player_list == 5:
+        red_fish = randint(1,6) + randint(1,6) + randint(1,6) + 2
+    elif length_player_list == 6:
+        red_fish = randint(1,6) + randint(1,6) + randint(1,6) + 4
+        red_fish = randint(1,6) + randint(1,6) + randint(1,6) + 2
+    elif length_player_list == 7:
+        red_fish = randint(1,6) + randint(1,6) + randint(1,6) + randint(1,6) + 
+                   randint(1,4) + 2       
+    elif length_player_list == 8:
+        red_fish = randint(1,6) + randint(1,6) + randint(1,6) + randint(1,6) + 
+                   randint(1,4) + 4         
+    else:
+        print ("you have too mach players")
+        raise ('ValueError')
+    
+    
+    print ("="*10,"faza opr kprm bazy","="*10)
+    print ("FOOD=",red_fish,"\n"*2)
+    
+    
     #==========================================================================
-def faza_pit(players, red_fish_count, first_player_number):
-    """
-    you can see in rules of this game
-    red_fish_count - red_fish from faz_opr_korm
-    """
-
+                                        # FAZA PITANIJA
+    active_num = first_num                                    
+    active_player = players_list[first_num]        
     while 1: # main loop of faza pitanija
-        player_number = first_player_number
-        if red_fish_count > 0: # if red_fish exists in korm baza
+        if red_fish > 0: # if red_fish exists in korm baza
             flag_hungry = 0
             flag_zhir = 0
-            count_topotun = 0
-            for item in players[player_number].animals: # if one of animals is hungry
-                if ['topo'] in  item.property:
-                    count_topotun += 1
-                if item.hungry > 0:
+            flag_topotun = 0
+            for Animal in active_player.animals: # if one of animals is hungry
+                if ['topo'] in  Animal.property:
+                    flag_topotun += 1
+                if Animal.hungry > 0:
                     flag_hungry += 1
-                if ["zhir"] in item.property and item.fat_cards_count > item.fat:
+                if ["zhir"] in Animal.property and Animal.fat_cards_count > Animal.fat:
                     flag_zhir += 1
-            if (flag_hungry == 0 and flag_zhir == 0) and red_fish_count > 0:
+            if (flag_hungry == 0 and flag_zhir == 0) and red_fish > 0: 
             # all animals aren't hungry and zhir
-                if count_topotun > 0:
+                if flag_topotun > 0:
                     while 1: # loop of choose topotun
                         try:
                             topotun_choise= input("do you want to use 'topotun'? y/n") 
                             if topotun_choise == 'Y' or topotun_choise == 'y':
-                                if count_topotun > 1:
-                                    topotun_num = int(input(f"how many red_fish do you want to delete? \
-                                                         max = {str(count_topotun)}"))
-                                    if 0 < topotun_num <= count_topotun:
-                                        if red_fish_count-topotun_num >=0:
-                                            red_fish_count -= topotun_num
+                                if flag_topotun > 1:
+                                    topotun_num = input("how many red_fish do you want to delete? \
+                                                         max = ",flag_topotun)
+                                    if 0 < topotun_num <= flag_topotun:
+                                        if red_fish-topotun_num >=0:
+                                            red_fish -= topotun_num
                                         else:
                                             red_fish = 0   
                                     else: 
@@ -745,7 +737,7 @@ def faza_pit(players, red_fish_count, first_player_number):
                                         continue # continue choose topotun         
                                 else: 
                                     topotun_num = 1        
-                                    red_fish_count -= topotun_num
+                                    red_fish -= topotun_num
                                 break # exit from loop of choose topotun
                             elif pass_faza == 'N' or pass_faza == 'n':
                                 break  #exit from loop topotun
