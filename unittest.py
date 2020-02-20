@@ -1,19 +1,27 @@
-a'''
+'''
 Created on Sep 9, 2018
 
 @author: xxx
 '''
 import unittest
 import module
-from random import randint 
 
+def test_next_player():
+    """Select next Player.  """
+    line = [-1, 8, 'a', chr(1099), 1, 4, 0]
+    result = list(map(module.next_player, line))
+    return result
+"""if len(players_list) > num + 1:
+            # active_player = players_list[num +1]
+            next_num = num + 1
+        else:
+            # active_player=players_list[0]
+            next_num = 0
+        return next_num"""
+"""
+        def test_takecards(self):
+            ""test takecards function for different values od num""
 
-
-#from module import player
-
-class Test(unittest.TestCase):
-    
-    def test_takecards(self):
         koloda = module.makecoloda(4)
         for i in range (15):
             lenght = len(koloda)
@@ -138,8 +146,7 @@ class Test(unittest.TestCase):
         #card = (["one",])
         ## property_value == card[:][0]
     
-            
-#if __name__ == "__main__":
+"""
+if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testmakeanimal']
- #   unittest.module()
-    
+    print(test_next_player())

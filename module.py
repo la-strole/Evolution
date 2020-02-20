@@ -62,17 +62,20 @@ class Animal:
 # define next active Player, change global active num
 
 
-def next_player(num):
-    """Select next Player.  """
-    # global active_num
-    if len(players_list) > num + 1:
-        # active_player = players_list[num +1]
-        next_num = num + 1
-    else:
-        # active_player=players_list[0]
-        next_num = 0
-    return next_num
-
+def next_player(num, players):
+    """Select next Player. players - players list """
+    try:
+        if 0 <= num <= len(players) <= 8:
+            if len(players) > num + 1:
+                next_num = num + 1
+            else:
+                next_num = 0
+            return next_num
+        print("something wrong with num value")
+        return -1
+    except TypeError:
+        print("something wrong with type")
+        return -1
 
 # take "number" cards from koloda and return them
 def take_cards(number: int, card_set: list) -> list:
@@ -575,14 +578,14 @@ def faza_razvitija(players, number):
             break  # Exit from main loop.
 
         elif number in list_of_pass:  # If active Player say PASS.
-            number = next_player(number)
+            number = next_player(number, players)
             active_player = players[number]
             continue  # Contunie main loop with next actie Player.
         else:  # If active Player don't say PASS.
             if not active_player.cards_hand:
                 # If Player hasn't cards in his hand - automatic PASS.
                 list_of_pass.append(number)
-                number = next_player(number)
+                number = next_player(number, players)
                 active_player = players[number]
                 continue  # Contunie main loop with next actie Player.
 
@@ -645,7 +648,7 @@ def faza_razvitija(players, number):
                     make_animal(active_player)
                     animal_id += 1
                     break  # Exit from loop 'suitable'.
-            number = next_player(number)
+            number = next_player(number, players)
             active_player = players[number]
             continue  # Loop 'mainloop'.
 
