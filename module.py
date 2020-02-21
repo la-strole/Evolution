@@ -55,39 +55,45 @@ class Animal:
         self.can_hunt = True
 
 
-# def define_first_player(count_of_players=2):
-#    return(randint(0,count_of_players-1)) 
-
-
-# define next active Player, change global active num
-
-
 def next_player(num, players):
-    """Select next Player. players - players list """
+    """Select next Player. players - players list return next num or -1 if failure"""
     try:
-        if 0 <= num <= len(players) <= 8:
-            if len(players) > num + 1:
-                next_num = num + 1
-            else:
-                next_num = 0
-            return next_num
-        print("something wrong with num value")
-        return -1
+        if len(players) > 1:
+            if 0 <= num <= len(players) - 1 <= 7:
+                if len(players) > num + 1:
+                    next_num = num + 1
+                else:
+                    next_num = 0
+                return next_num
+            print("something wrong with num value")
+            return -1
+        else:
+            print("number of player are less or equal than 1")
+            return -1
     except TypeError:
         print("something wrong with type")
         return -1
 
-# take "number" cards from koloda and return them
-def take_cards(number: int, card_set: list) -> list:
-    """Take <number> of cards from <card_set> and return it.  """
-    if number >= 0:
-        try:
-            return [card_set.pop() for i in range(number)]
-        except IndexError:
-            print("end of cards!")
-    else:
-        print('error with type of number in take_cards function')
-        raise IndexError
+# TODO here for unittest - problem with this test - something wrong with this
+def take_cards(number: int, card_set: list):
+    """Take <number> of cards from <card_set> and return it and remove from <card_set>."""
+    try:
+        if number <= 0:
+            print("number is less than zero or zero")
+            return -1
+        else:
+            if number <= len(card_set):
+                try:
+                    return [card_set.pop() for i in range(number)]
+                except IndexError:
+                    print("end of cards!")
+                    return -1
+            else:
+                print('error with number in take_cards function')
+                return -1
+    except (TypeError, AttributeError):
+        print("type error in card_set")
+        return -1
 
 
 def take_handcard(player, **kwargs):
@@ -125,7 +131,25 @@ def make_animal(player):
         # for i in Player.animals:
     return 1
 
-
+# TODO make returncard_to_coloda function to return card
+def make_parasite(players):
+    """ set parasite property t another player's animal players - players list"""
+    for count, item in enumerate(players):
+        print(f"player {count} {item.name}")
+        for number, animal in enumerate(item.animals):
+            print(f"animal {number} {animal.property}")
+    player_num = input("choose player number")
+    if 'para' in all(players[player_num].animals.property):
+        print(f" all {players[player_num].name} animals has parasites - choose another player")
+    else:
+        for number, animal in enumerate(item.animals):
+            print(f"animal {number} {animal.property}")
+        animal_num = input("choose animal number")
+        if players[player_num].animals[animal_num].parasite == 0:
+            players[player_num].animals[animal_num].property.append("para")
+            players[player_num].animals[animal_num].parasite += 1
+            players[player_num].animals[animal_num].hungry += 2
+            print(players[player_num].animals[animal_num].property)
 def make_parasite(players_list, active_num, **kwargs):
     """Set parasite to another Player.  """
     for i in range(len(players_list)):
