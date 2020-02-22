@@ -32,7 +32,7 @@ class TestEvolution(unittest.TestCase):
             else:
                 self.assertEqual(type(module.take_cards(number, card_set)), list)
                 self.assertEqual(len(card_set), len(old_card_set) - number)
-        card_set = str(card_set)
+        card_set = 'string'
         old_card_set = card_set
         self.assertEqual(module.take_cards(number, card_set), -1)
         self.assertEqual(len(card_set), len(old_card_set))
@@ -40,6 +40,11 @@ class TestEvolution(unittest.TestCase):
         old_card_set = card_set[:]
         self.assertEqual(module.take_cards(number, card_set), -1)
         self.assertEqual(len(card_set), len(old_card_set))
+
+    def test_take_handcard(self):
+        p = module.Player() # p - class Player instance
+        hand_variant = [[], list(range(randint(1, 10))), 4, 'abc']
+
 
 
 if __name__ == '__main__':

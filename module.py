@@ -74,12 +74,12 @@ def next_player(num, players):
         print("something wrong with type")
         return -1
 
-# TODO here for unittest - problem with this test - something wrong with this
+
 def take_cards(number: int, card_set: list):
     """Take <number> of cards from <card_set> and return it and remove from <card_set>."""
     try:
         if number <= 0:
-            print("number is less than zero or zero")
+            print('number is less than zero or zero')
             return -1
         else:
             if number <= len(card_set):
@@ -96,31 +96,34 @@ def take_cards(number: int, card_set: list):
         return -1
 
 
-def take_handcard(player, **kwargs):
-    """Take card from <Player>'s hand and return it (Player - active_player).  """
-    if player.cards_hand:
-
-        while 1:
-            # Return number of card from Player's hand.
-            try:
-                print("your hand is:", player.cards_hand)
-                if 'test' in kwargs.keys():
-                    card_num = kwargs['cardnum'] - 1
-                else:
-                    card_num = int(input("choose card's number")) - 1
-                if 0 <= card_num < len(player.cards_hand):
-                    card = player.cards_hand.pop(card_num)
-                    break
-                else:
-                    print("try again")
-            except:
-                print("error, try again")
-                continue
-        return card
+def take_handcard(player):
+    """Take one card from <Player>'s hand and return it (Player - active_player).  """
+    if isinstance(player, Player):
+        if isinstance(player.cards_hand, list):
+            if player.cards_hand:
+                while 1:
+                    # Return number of card from Player's hand.
+                    try:
+                        print("your hand is:", player.cards_hand)
+                        card_num = int(input("choose card's number")) - 1
+                        if 0 <= card_num < len(player.cards_hand):
+                            card = player.cards_hand.pop(card_num)
+                            break
+                        else:
+                            print("try again")
+                    except:
+                        print("error, try again")
+                        continue
+                return card
+            else:
+                print("this Player hasn't any cards!")
+                return -1
+        else:
+            print("player handcards is not a list")
+            return -1
     else:
-        print("this Player hasn't any cards!")
-        raise IndexError
-
+        print("player is not instnce of Player class")
+        return -1
 
 def make_animal(player):
     print("Adding new Animal to you")
