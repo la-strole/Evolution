@@ -41,10 +41,6 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(module.take_cards(number, card_set), -1)
         self.assertEqual(len(card_set), len(old_card_set))
 
-    def test_take_handcard(self):
-        p = module.Player() # p - class Player instance
-        hand_variant = [[], list(range(randint(1, 10))), 4, 'abc']
-
 
 
 if __name__ == '__main__':

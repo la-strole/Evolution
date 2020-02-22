@@ -125,34 +125,59 @@ def take_handcard(player):
         print("player is not instnce of Player class")
         return -1
 
+
 def make_animal(player):
-    print("Adding new Animal to you")
-    new_animal = Animal()
-    player.animals.append(new_animal)
-    for i in range(len(player.animals)):
-        print('Animal', i + 1, ':', player.animals[i].property)
-        # for i in Player.animals:
-    return 1
+    """ append animal to player.animals. return 1 ir -1 if error"""
+    if isinstance(player, Player):
+        print(f"Adding new Animal to you, {player.name}")
+        new_animal = Animal()
+        player.animals.append(new_animal)
+        try:
+            for number_animal, animal_instance in enumerate(player.animals):
+                print(f"Animal {number_animal + 1}:, {animal_instance.property}")
+            return 1
+        except:
+            print("exception error")
+            return -1
+    else:
+        return -1
 
 # TODO make returncard_to_coloda function to return card
+
+
 def make_parasite(players):
-    """ set parasite property t another player's animal players - players list"""
-    for count, item in enumerate(players):
-        print(f"player {count} {item.name}")
-        for number, animal in enumerate(item.animals):
-            print(f"animal {number} {animal.property}")
-    player_num = input("choose player number")
-    if 'para' in all(players[player_num].animals.property):
-        print(f" all {players[player_num].name} animals has parasites - choose another player")
+    """ set parasite property to another player's animal players - players list"""
+    if isinstance(players, list):
+        if players:
+            for count, player_instance in enumerate(players):
+                print(f"player {count + 1} {player_instance.name}")
+                for number, animal in enumerate(player_instance.animals):
+                    print(f"animal {number + 1} {animal.property}")
+            while 1:
+                player_num = input("choose player number")
+                if isinstance(player_num, int) and 0 < player_num <= len(players):
+                    if len([x for item in players[player_num].animals for x in item.property if x == 'para']) >= \
+                            len(players[player_num].animals):
+                        print(f" all {players[player_num].name} animals has parasites - choose another player")
+                        continue
+                    else:
+                        for number, animal in enumerate(player_instance.animals):
+                            print(f"animal {number} {animal.property}")
+                        animal_num = input("choose animal number")
+                        if players[player_num].animals[animal_num].parasite == 0:
+                            players[player_num].animals[animal_num].property.append("para")
+                            players[player_num].animals[animal_num].parasite += 1
+                            players[player_num].animals[animal_num].hungry += 2
+                            print(players[player_num].animals[animal_num].property)
+                else:
+                    print("type error or indexerror of number, try again")
+                    continue
+        else:
+            print("players list is empty! error.")
+            return -1
     else:
-        for number, animal in enumerate(item.animals):
-            print(f"animal {number} {animal.property}")
-        animal_num = input("choose animal number")
-        if players[player_num].animals[animal_num].parasite == 0:
-            players[player_num].animals[animal_num].property.append("para")
-            players[player_num].animals[animal_num].parasite += 1
-            players[player_num].animals[animal_num].hungry += 2
-            print(players[player_num].animals[animal_num].property)
+        print(f"players argument is not list")
+        return -1
 def make_parasite(players_list, active_num, **kwargs):
     """Set parasite to another Player.  """
     for i in range(len(players_list)):
