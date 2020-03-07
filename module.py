@@ -158,8 +158,17 @@ def make_parasite(players):
                 if isinstance(player_num, int) and 0 < player_num <= len(players):
                     if len([x for item in players[player_num].animals for x in item.property if x == 'para']) >= \
                             len(players[player_num].animals):
-                        print(f" all {players[player_num].name} animals has parasites - choose another player")
-                        continue
+                        print(f" all {players[player_num].name} animals has parasites - choose another player or say "
+                              f"pass")
+                        choice = input("do you want to return parasite card to your hand y/n?")
+                        if choice == 'Y' or 'y':
+                            # TODO look for make property function to return card to hand
+                            return -1
+                        elif choice == 'N' or 'n':
+                            continue
+                        else:
+                            print(f"error with y/n try again")
+                            continue
                     else:
                         for number, animal in enumerate(player_instance.animals):
                             print(f"animal {number} {animal.property}")
