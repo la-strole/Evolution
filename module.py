@@ -615,7 +615,7 @@ def make_koloda(number_of_players):
         set_cards = cards * 8
     else:
         print("looks like this is something wrong with number_players!")
-        raise(ValueError)
+        raise ValueError
     shuffle(set_cards)
     return set_cards
 
@@ -722,7 +722,146 @@ def faza_razvitija(players, number):
     print("end of faza razvitije")
     return 1
 
+# TODO STAY HERE - troubles : I try to make thi functiono - but it shold change re_fish_count - I I don't want to make
+#  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
+#  name... OMG - really shitcode...
 
+
+def eating_from_red_fish_base(current_animal):
+    if red_fish_count > 0:
+        if current_animal.hungry > 0:
+            # if animal is hungry - can't add fat card
+            red_fish_count -= 1
+            current_animal.hungry -= 1
+            # TODO make simbious, communication and cooperation
+            if False:
+                pass
+            else:
+                # if current animal has not pair options
+                print(f"animal {current_animal.property} hungry decrease to "
+                      f"{current_animal.hungry}")
+        elif current_animal.hungry == 0 and current_animal.fat_cards_count - \
+                current_animal.fat > 0:
+            # animal is not hungry but has fat card and not enough fat
+            red_fish_count -= 1
+            current_animal.fat += 1
+        else:
+            print("error with block of adding food")
+            return -1
+    # TODO write this function
+
+def carnivorous_eating_process(carnivore):
+    """" here carnivore eating process"""
+    # TODO write tthis function
+    pass
+
+
+def grazing_process():
+    """" remove some red fish from food base"""
+    # TODO write thi function
+    pass
+
+def phase_eating(players, first_player_number, red_fish_count):
+    """ realize eating phase players - players with animals"""
+    player_number = first_player_number
+    if players and isinstance(players, list):
+        if not players[player_number].animals:
+            print(f"error - this player ({players[player_number].name}) has not any animals")
+            return -1
+        else:
+            stop_this_round_list = []  # for exit from below while 1 - if len of this list == len players_list
+            while 1: # main loop
+                if len(stop_this_round_list) == len(players):
+                    break
+                # make list of hungry animals of active player
+                hungry_animal = [hungry_animal for hungry_animal in players[player_number].animals if
+                                 hungry_animal.hungry > 0]
+                # make list of fat and hungry animal
+                not_enough_fat_animal = [animal for animal in players[player_number] if
+                                         animal.fat_cards_count - animal.fat > 0]
+                # make list of carnivorous
+                carnivorous = [animal for animal in players[player_number] if animal.carnivorous]
+                if hungry_animal or not_enough_fat_animal:
+                    print(f"active player - {players[player_number].name}")
+                    print("you have hungry animals")
+                    print(f"your hungry animals:")
+                    hungry_not_en_fat_set = list(set(hungry_animal + not_enough_fat_animal))
+                    for number, animal in enumerate(hungry_not_en_fat_set):
+                        print(f"{number + 1} animal, property: {animal.property}, hungry = {animal.hungry} "
+                              f"fat = {animal.fat} fat cards = {animal.fat_cards_count})")
+                    print(f"food base = {red_fish_count}")
+                    # if so bad - neither carnivorous nor grazing - actually nothing to do on this turn
+
+                    if not carnivorous and players[player_number].grazing_count == 0 and red_fish_count == 0:
+                        # if there are hungry or not enough fat and red fih doesn't exist
+                        print(f"ou, you have hungry animals, but they can't eat...")
+                        stop_this_round_list.append(players[player_number])
+                        player_number = next_player
+                        continue
+                    # do you want to use grazing property
+                    elif players[player_number].grazing_count > 0:
+                        print(f"you have grazing property and can destroy {players[player_number].grazing_count} red "
+                              f"fishes from red fish base ({red_fish_count})")
+                        while 1:
+                            choose = input(f"you have animals with grazing property - do you want to use this\n"
+                                           f"property to destroy red fish in food base={red_fish_count} y/n?")
+                            if choose == 'y' or 'Y':
+                                grazing_process()
+                                break
+                            elif choose == 'n' or 'N':
+                                break
+                            else:
+                                print("please, type only n or y - try again")
+                                continue
+
+                    # choose hungry animal or say pass
+                    print("now you can choose your hungry animal or say PASS")
+                    while 1:
+                        choose = input(f"please choose what animal do you want to give food? or type 'p' - say pass")
+                        if choose == 'p' or 'P':
+                            player_number = next_player(player_number)
+                            break
+                        else:
+                            animal_id = int(choose) - 1
+                                # TODO STAY HERE
+                            if isinstance(animal_id, int) and 0 <= animal_id < len(hungry_not_en_fat_set):
+                                current_animal = hungry_not_en_fat_set[animal_id]
+                                break
+                            else:
+                                print("something wrong with animal number - try again")
+                                continue
+                    # to say PASS
+                    if choose == 'p' or 'P':
+                        continue  # main loop
+                    # if current animal is carnivores and there are red fish
+                    if current_animal.carnivores and red_fish_count > 0:
+                        print(f"your animal is carnivores. Do you want to use this property and try to kill or you want"
+                              f"to take red fish from red fish base = {red_fish_count}? C/R?")
+                        while 1:
+                            choose = input()
+                            if choose == 'C' or 'c':
+                                carnivorous_eating_process(current_animal)
+                                break
+                            elif choose == "r" or "R":
+                                eating_from_red_fih_base()
+                            else:
+                                print("something wrong with your input. please try r or c")
+                                continue
+
+
+
+                else:
+                    # all animals of this active player are not hungry and are enough fat
+                    # TODO make here posobility of topotun proprety
+                    stop_this_round_list.append(players_list(player_number))
+                    player_number = next_player(player_number)
+            print(f"end of eating phase")
+
+
+
+    else:
+        print(f"error! trouble with players_list in faza pit function")
+        return -1
 animal_id = 0  # Global - for different  Animal id in Animal class -
 # increments 2 times in global in faza razvitija function.
 if __name__ == "__main__":
@@ -766,66 +905,29 @@ if __name__ == "__main__":
     
     
     #==========================================================================
-                                        # FAZA PITANIJA
-    active_num = first_num                                    
-    active_player = players_list[first_num]        
-    while 1: # main loop of faza pitanija
-        if red_fish > 0: # if red_fish exists in korm baza
-            flag_hungry = 0
-            flag_zhir = 0
-            flag_topotun = 0
-            for Animal in active_player.animals: # if one of animals is hungry
-                if ['topo'] in  Animal.property:
-                    flag_topotun += 1
-                if Animal.hungry > 0:
-                    flag_hungry += 1
-                if ["zhir"] in Animal.property and Animal.fat_cards_count > Animal.fat:
-                    flag_zhir += 1
-            if (flag_hungry == 0 and flag_zhir == 0) and red_fish > 0: 
-            # all animals aren't hungry and zhir
-                if flag_topotun > 0:
-                    while 1: # loop of choose topotun
-                        try:
-                            topotun_choise= input("do you want to use 'topotun'? y/n") 
-                            if topotun_choise == 'Y' or topotun_choise == 'y':
-                                if flag_topotun > 1:
-                                    topotun_num = input("how many red_fish do you want to delete? \
-                                                         max = ",flag_topotun)
-                                    if 0 < topotun_num <= flag_topotun:
-                                        if red_fish-topotun_num >=0:
-                                            red_fish -= topotun_num
-                                        else:
-                                            red_fish = 0   
-                                    else: 
-                                        print("something wrong with input number of red_fish!")
-                                        continue # continue choose topotun         
-                                else: 
-                                    topotun_num = 1        
-                                    red_fish -= topotun_num
-                                break # exit from loop of choose topotun
-                            elif pass_faza == 'N' or pass_faza == 'n':
-                                break  #exit from loop topotun
-                            else: 
-                                print("try again!")    
-                        except:
-                            print('exception yes/no tpotun_choose! try again!')     
-          
+# TODO STAY HERE - troubles : I try to make thi functiono - but it shold change re_fish_count - I I don't want to make
+#  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
+#  name... OMG - really shitcode...
+
+def eating_from_red_fish_base(current_animal):
+    if red_fish_count > 0:
+        if current_animal.hungry > 0:
+            # if animal is hungry - can't add fat card
+            red_fish_count -= 1
+            current_animal.hungry -= 1
+            # TODO make simbious, communication and cooperation
+            if False:
+                pass
             else:
-                print("some of your animals are hungry or zhir")
-                break # break loop faza pitanije for test
-    
+                # if current animal has not pair options
+                print(f"animal {current_animal.property} hungry decrease to "
+                      f"{current_animal.hungry}")
+        elif current_animal.hungry == 0 and current_animal.fat_cards_count - \
+                current_animal.fat > 0:
+            # animal is not hungry but has fat card and not enough fat
+            red_fish_count -= 1
+            current_animal.fat += 1
         else:
-            print("you don't have any red_fishes in your korm baza")
-            break # break loop faza pitanije for test
-    
-        break # break loop faza pitanije for test
-    
-    
-    
-    
-    
-    
-    
-    
-    #--------------------------------------------------------------------------------------------
-    """
+            print("error with block of adding food")
+            return -1
+            """
