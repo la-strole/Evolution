@@ -2,7 +2,9 @@ import module
 import unittest
 from random import randint
 
+
 class TestEvolution(unittest.TestCase):
+
     def test_next_player(self):
         """ test different value for num and range for player list"""
         num_variants = [-1, 8, 'a', chr(1099), 1, 4, 0]
@@ -40,7 +42,6 @@ class TestEvolution(unittest.TestCase):
         old_card_set = card_set[:]
         self.assertEqual(module.take_cards(number, card_set), -1)
         self.assertEqual(len(card_set), len(old_card_set))
-
 
 
 if __name__ == '__main__':
