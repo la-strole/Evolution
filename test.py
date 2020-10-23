@@ -80,19 +80,33 @@ class TestEvolution(unittest.TestCase):
         unit test for faza_razvitija(players: list, number: int) function
         """
 
-        players_list = [module.Player(name=str(x)) for x in range(4)]
+        players_list = [module.Player('first_player'), module.Player('second_player')]
         cards = [("ostr", "zhir"), ("topo", "zhir"), ("para", "hish"), ("para", "zhir"),
                  ("norn", "zhir"), (["sotr"], "hish"), (["sotr"], "zhir"), ("jado", "hish"),
                  ("komm", "zhir"), ("spac", "hish"), ("mimi",), (["simb"],),
                  ("pada",), ("pira",), ("otbr",), ("bist",), ("vodo",), ("vodo",),
                  (["vzai"], "hish"), ("bols", "zhir"), ("bols", "hish")]
-        hands = []
+        hands = [("ostr", "zhir"), ("ostr", "zhir")]
         for player in players_list:
             player.get_cards_hand().extend(hands)
-
         first_number = 0
-        with patch.object(module.faza_razvitija, "list_of_pass", "new"):
-
+        razvitie = module.Faza_Razvitija(players_list, first_number)
+        """# if all players say pass (len(list_of_pass = len(players))
+        razvitie.list_of_pass = players_list[:]
+        razvitie.faza_rezvitija_function()
+    # if current player in list_say_pass - next player
+        razvitie = module.Faza_Razvitija(players_list[:], first_number)
+        razvitie.list_of_pass.append(first_number)
+        razvitie.faza_rezvitija_function()
+    # if player has not cards in his hand - automatic pass
+        players_list[0].set_cards_hand([])
+        razvitie = module.Faza_Razvitija(players_list, first_number)
+        razvitie.faza_rezvitija_function()
+        """
+        #if active player don't have animals
+        razvitie.test = True
+        razvitie.faza_rezvitija_function()
+    # todo looks like test fail - after adding animal - first player is still active player
 
 
 if __name__ == '__main__':

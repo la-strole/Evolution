@@ -141,7 +141,102 @@ class Animal:
         """
         return self.hungry
 
+class Faza_Razvitija:
+    """
+    faza razvitija
+    players: list - list of instances Player
+    number: int - number of first player
+    """
+    def __init__(self, players: list, number: int):
+        self.players = players
+        self.number = number
+        self.list_of_pass = []
+        self.active_player = self.players[self.number]
+        self.test = False # to print test information
+        assert type(players) == list, f'faza_razvitija(players, number): type(players) is {type(players)} not list'
+        assert type(number) == int, f'faza_razvitija(players, number): type(number) is {type(number)} not int'
+        assert number < len(players), f'faza_razvitija(players, number): number {number} > len(players) {len(players)}'
+        for item in players:
+            assert isinstance(item, Player), f'faza_razvitija(players, number): {item} from players is not instance of ' \
+                                         f'Player'
 
+    def test_print(self):
+        if self.test:
+            print(f'TEST:{self.active_player}')
+
+
+    def faza_rezvitija_function(self):
+        while 1:
+            # Main loop.
+            if len(self.list_of_pass) == len(self.players):
+                print("All players said PASS")
+                break  # Exit from main loop.
+            elif self.number in self.list_of_pass:  # If active Player said PASS.
+                self.number = next_player(self.number, self.players)
+                self.active_player = self.players[self.number]
+                continue  # Continue main loop with next active Player.
+            else:  # If active Player don't say PASS.
+                if not self.active_player.get_cards_hand():
+                    # If Player hasn't cards in his hand - automatic PASS.
+                    self.list_of_pass.append(self.number)
+                    self.number = next_player(self.number, self.players)
+                    self.active_player = self.players[self.number]
+                    continue  # Continue main loop with next active Player.
+            print("active Player ", self.active_player.get_player_name(), "=" * 20, "\n")
+            print("Player's hand: ", self.active_player.get_cards_hand())
+            if self.active_player.get_player_animals():
+                for i in self.active_player.get_player_animals():
+                    print('Animal:', i.get_animal_properties())
+            else:
+                print("you haven't animals yet")
+            while 1:  # Loop for unsuitable properties -
+                #  to possibility of returning card to deck.
+                # animal_id = 0
+                if self.active_player.get_player_animals():
+                    pass_phrase = input_function(['Y', 'y', 'n', 'N'], "do you want to say Pass (y/n)")
+                    if pass_phrase == 'y':
+                        self.list_of_pass.append(self.number)
+                    if self.number in self.list_of_pass:
+                        break  # Exit from loop 'suitable'.
+                    while 1:  # Loop of choose Animal/property.
+                        flag_suit = 0
+                        choice = input_function(['A', 'a', 'P', 'p'], "do you want to make new Animal or\
+                                       new property? (a/p)")
+                        if choice == 'a':
+                            self.active_player.take_handcard()
+                            self.active_player.make_animal()
+                            flag_suit = 1
+                            break  # Exit from loop of choose Animal/property.
+                        elif choice == 'p':
+                            # If you can set property to the Animal:
+                            flag_suit = make_property(self.active_player, self.players)
+                            break  # Exit from loop of choose Animal/property.
+                    if flag_suit == 1:
+                        break  # Exit from loop 'suitable'.
+                    else:
+                        continue  # Loop 'suitable'  return unsuitable card to
+                        #  hand in function make_property.
+
+                else:  # If you don't have any animals.
+                    print("now you have to make your first Animal from your hand")
+                    self.test_print()
+                    self.active_player.take_handcard()
+                    self.test_print()
+                    self.active_player.make_animal()
+                    self.test_print()
+                    break  # Exit from loop 'suitable'.
+            self.number = next_player(self.number, self.players)
+            active_player = self.players[self.number]
+            continue  # Loop 'mainloop'.
+
+        for i in range(len(self.players)):
+            print(self.players[i].get_player_name(), '\n', "animals:\n")
+            for item in range(len(self.players[i].get_player_animals())):
+                print("Animal", item + 1, self.players[i].get_player_animals()[item].get_animal_properties(),
+                      "hungry=", self.players[i].get_player_animals()[item].get_hungry())
+            print("=" * 20, "\n")
+        print("end of faza razvitije")
+        return 1
 def set_player_name():
     """
     set player's name
@@ -647,91 +742,6 @@ def input_function(alternatives, greeting: str):
         print('error than input, please, try again')
 
 
-def faza_razvitija(players: list, number: int):
-    """
-    faza razvitija
-    players: list - list of instances Player
-    number: int - number of first player
-    """
-    list_of_pass = []
-    assert type(players) == list, f'faza_razvitija(players, number): type(players) is {type(players)} not list'
-    assert type(number) == int, f'faza_razvitija(players, number): type(number) is {type(number)} not int'
-    assert number < len(players), f'faza_razvitija(players, number): number {number} > len(players) {len(players)}'
-    for item in players:
-        assert isinstance(item, Player), f'faza_razvitija(players, number): {item} from players is not instance of ' \
-                                         f'Player'
-    active_player = players[number]
-    while 1:
-        # Main loop.          
-        if len(list_of_pass) == len(players):
-            print("All players said PASS")
-            break  # Exit from main loop.
-        elif number in list_of_pass:  # If active Player said PASS.
-            number = next_player(number, players)
-            active_player = players[number]
-            continue  # Continue main loop with next active Player.
-        else:  # If active Player don't say PASS.
-            if not active_player.get_cards_hand():
-                # If Player hasn't cards in his hand - automatic PASS.
-                list_of_pass.append(number)
-                number = next_player(number, players)
-                active_player = players[number]
-                continue  # Continue main loop with next active Player.
-            print("active Player ", active_player.get_player_name(), "=" * 20, "\n")
-            print("Player's hand: ", active_player.get_cards_hand())
-            if active_player.get_player_animals():
-                for i in active_player.get_player_animals():
-                    print('Animal:', i.get_animal_properties())
-            else:
-                print("you haven't animals yet")
-            while 1:  # Loop for unsuitable properties -
-                #  to possibility of returning card to deck.
-                # animal_id = 0
-                if active_player.get_player_animals():
-                    pass_phrase = input_function(['Y', 'y', 'n', 'N'], "do you want to say Pass (y/n)")
-                    if pass_phrase == 'y':
-                        list_of_pass.append(number)
-                    if number in list_of_pass:
-                        break  # Exit from loop 'suitable'.
-                    while 1:  # Loop of choose Animal/property.
-                        flag_suit = 0
-                        choice = input_function(['A', 'a', 'P', 'p'], "do you want to make new Animal or\
-                                       new property? (a/p)")
-                        if choice == 'a':
-                            active_player.take_handcard()
-                            active_player.make_animal()
-                            flag_suit = 1
-                            break  # Exit from loop of choose Animal/property.
-                        elif choice == 'p':
-                            # If you can set property to the Animal:
-                            flag_suit = make_property(active_player, players)
-                            break  # Exit from loop of choose Animal/property.
-                    if flag_suit == 1:
-                        break  # Exit from loop 'suitable'.
-                    else:
-                        continue  # Loop 'suitable'  return unsuitable card to
-                        #  hand in function make_property.
-
-                else:  # If you don't have any animals.
-                    print("now you have to make your first Animal from your hand")
-                    active_player.take_handcard()
-                    active_player.make_animal()
-
-                    break  # Exit from loop 'suitable'.
-            number = next_player(number, players)
-            active_player = players[number]
-            continue  # Loop 'mainloop'.
-
-    for i in range(len(players)):
-        print(players[i].get_player_name(), '\n', "animals:\n")
-        for item in range(len(players[i].get_player_animals())):
-            print("Animal", item + 1, players[i].get_player_animals()[item].get_animal_properties(),
-                  "hungry=", players[i].get_player_animals()[item].get_hungry())
-        print("=" * 20, "\n")
-    print("end of faza razvitije")
-    return 1
-
-
 # TODO STAY HERE - troubles : I try to make thi functiono - but it shold change re_fish_count - I I don't want to make
 #  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
 #  name... OMG - really shitcode...
@@ -886,7 +896,8 @@ if __name__ == "__main__":
             players_list), f'main: len(deck) < len(players)*6. Not enough cards to make first hand'
         player.make_first_hand(deck)
     first_number_player = randint(0, len(players_list) - 1)
-    faza_razvitija(players_list, first_number_player)
+    razvitie = Faza_Razvitija(players_list, first_number_player)
+    razvitie.faza_rezvitija_function()
 
     """    
     #=========================================================================
