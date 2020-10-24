@@ -51,7 +51,7 @@ class Player:
         card set - deck"""
         assert type(card_set) == list, f'Player.make_first_hand({card_set}: card_set not a list)'
         assert len(card_set) >= 6, f'Player.make_first_hand({card_set}: not enough cards to make first 6 card hand)'
-        self.cards_hand = take_cards(6, card_set)
+        self.cards_hand = functions.take_cards(6, card_set)
         return 1
 
     def take_handcard(self):
@@ -141,29 +141,402 @@ class Animal:
         """
         return self.hungry
 
+
+class functions:
+
+    @staticmethod
+    def input_function(alternatives, greeting: str):
+        """
+        alternatives: list - list of chars - what you expect from input
+        greeting: str - text to print in input
+        return lowercase user input from alternative
+        """
+        for char in alternatives:
+            assert type(
+                char) == str, f'input_function(alternatives, greeting: str): alternatives ({char}) not from strings'
+        assert type(greeting) == str, f'input_function(alternatives, greeting: str): greeting ({greeting})is not string'
+        assert len(alternatives) >= 1, f'input_function(alternatives, greeting: str): len(alternatives)<1 ' \
+                                       f'({len(alternatives)}'
+        while True:
+            result = input(greeting)
+            if result in alternatives:
+                return result.lower()
+            print('error than input, please, try again')
+
+    @staticmethod
+    def set_player_name():
+        """
+        set player's name
+        """
+        while True:
+            try:
+                name = str(input("input Player's name: "))
+                break
+            except ValueError:
+                print("try to input another name")
+        return name
+
+    @staticmethod
+    def next_player(num: int, players: list):
+        """Select next Player.
+        num: int - index of current player in players list
+        players: list - players list
+        return next player num or -1 if failure"""
+        assert type(num) == int, f'next_player({num},{players}): type of num ({type(num)}) is not int'
+        assert type(players) == list, f'next_player({num},{players}): type of {players} is not list'
+        assert 1 < len(players) <= 7, f'next_player({num},{players}): number of players ({len(players)}) ' \
+                                      f'are not in range(2,7)'
+        assert 0 <= num <= len(players) - 1, f'next_player({num},{players}): num = {num} not in len(players) range'
+        try:
+            result = (num + 1) % len(players)
+            return result
+        except:
+            return -1
+
+    @staticmethod
+    def take_cards(number: int, card_set: list):
+        """Take <number> of cards from <card_set> and return it and remove from <card_set>.
+        number: int - number of cards to take from card_Set
+        card_set: list - list of cards
+        return number of cards (list) from card set or -1 if failure
+        """
+        assert type(number) == int, f'take_cards({number}, {card_set}): type of number ({type(number)} is not int'
+        assert type(
+            card_set) == list, f'take_cards({number}, {card_set}): type of card_set ({type(card_set)} is not list'
+        assert number > 0, f'take_cards({number}, {card_set}): number({number}) <= 0'
+        if number <= len(card_set):
+            try:
+                return [card_set.pop() for i in range(number)]
+            except IndexError:
+                print(f"take_cards({number}, {card_set}): number > card_set! end of cards!")
+                return -1
+        else:
+            print(f'take_cards({number}, {card_set}): error with number in take_cards function')
+            return -1
+
+    @staticmethod
+    def make_players_list():
+        """Make players list = [instances of Player class] by default min 2 max 8.
+        Return players_list: list  """
+        result = []
+        while True:
+            try:
+                number_of_players = int(input("input number of players (2...8)"))
+                if (number_of_players >= 8) or (number_of_players < 2):
+                    print("bad number, try again")
+                else:
+                    break
+            except ValueError:
+                print("value error! bad number of players, try again")
+            except NameError:
+                print("name error! bad number of players, try again")
+        for i in range(number_of_players):
+            result.append(Player(name=functions.set_player_name()))  # List of instances of Player class.
+        return result
+
+    @classmethod
+    def make_property(cls, player, players_list):
+        """ Defines the property for Player's Animal players_list and active_num -
+            for function make_parasite.
+        player: Player() - instance of Player class
+        players_list: list - list of instances of Player()
+        """
+        assert isinstance(player,
+                          Player), f'make_property(player, card, players_list): player is not instance of Player'
+        active_num = players_list.index(player)
+        card = player.take_handcard()
+
+        def print_player_animals(player):
+            assert isinstance(player, Player), f'print_player_animals(player): player is not instance of Player'
+            for number, animal in enumerate(player.get_player_animals()):
+                print(number + 1, ' ', animal.get_animal_properties())
+            return 1
+
+        # take property value from card
+        if len(card) > 1:
+            print("your card has more than one property ", card)
+            choice = cls.input_function(['1', ' 2'], 'your card has more than one property - choose 1/2')
+            if choice == '1':
+                property_value = card[:][0]
+            else:
+                property_value = card[:][1]
+        else:
+            property_value = card[:][0]  # If only one property on the card.
+        print("your property", property_value)
+
+        lenght_player_animals = len(player.get_player_animals())
+
+        if property_value not in [['vzai'], ['simb'], ['sotr'], "para", "zhir"]:
+            # Property is single and not parasite, zhir.
+            while 1:  # for single property.
+                print_player_animals(player)
+                choice = cls.input_function([str(animal_number + 1) for animal_number in
+                                                   range(lenght_player_animals)],
+                                                  'choose animals number to add property: ')
+                current_animal = player.get_player_animals()[int(choice) - 1]
+                if property_value in current_animal.get_animal_properties():
+                    # Not doubles.
+                    print("This Animal already has this property! choose another Animal!")
+                    ret_card = cls.input_function(['y', 'n'], 'do you want to return your card \
+                                         to your hand? y/n')
+                    if ret_card == 'y':
+                        player.get_cards_hand().append(card)
+                        return 0
+                    else:
+                        continue  # Test for single properies loop.
+                elif (property_value == "pada") and ("hish" in current_animal.get_animal_properties()):
+                    print("Predator can't have scavenger property")
+                    ret_card = cls.input_function(['y', 'n'], 'do you want to return your card to your hand? y/n')
+                    if ret_card == 'y':
+                        player.get_cards_hand().append(card)
+                        return 0
+                    else:
+                        continue  # Test for single properies loop.
+                elif (property_value == "hish") and ("pada" in current_animal.get_animal_properties()):
+                    print("your Animal is scavenger - it can't be predator!")
+                    ret_card = cls.input_function(['y', 'n'], 'do you want to return your card to your hand? y/n')
+                    if ret_card == 'y':
+                        player.get_cards_hand().append(card)
+                        return 0
+                    else:
+                        continue  # Test for single properies loop.
+                else:
+                    current_animal.get_animal_properties().append(property_value)
+
+                    if property_value == "vodo":
+                        current_animal.swimming = True
+                    elif property_value == "bist":
+                        current_animal.running = True
+                    elif property_value == "mimi":
+                        current_animal.mimicry = True
+                    elif property_value == "pada":
+                        current_animal.scavenger = True
+                    elif property_value == "pira":
+                        current_animal.piracy = True
+                        current_animal.can_piracy = True
+                    elif property_value == "otbr":
+                        current_animal.tail_loss = True
+                    elif property_value == "topo":
+                        current_animal.grazing = True
+                    elif property_value == "bols":
+                        current_animal.hungry += 1  # If big - +1 to eat.
+                        current_animal.high_body_weight = True
+                    elif property_value == "spac":
+                        current_animal.hibernation = True
+                        current_animal.hibernation_active = False
+                        current_animal.hibernation_ability = True
+                    elif property_value == "jado":
+                        current_animal.poisonous = True
+                    elif property_value == "norn":
+                        current_animal.burrowing = True
+                    elif property_value == "komm":
+                        current_animal.camouflage = True
+                    elif property_value == "ostr":
+                        current_animal.sharp_vision = True
+                    elif property_value == "hish":
+                        current_animal.carnivorous = True
+                        current_animal.can_hunt = True
+                        current_animal.hungry += 1  # If carnivorous - +1 to eat.
+                    break  # Test for single properties loop.
+            return 1
+        elif property_value == "para":
+            if make_parasite(players_list, active_num):
+                return 1
+            else:
+                player.get_cards_hand().append(card)
+                return 0
+        elif property_value == "zhir":
+            while 1:  # Zhir loop.
+                print_player_animals(player)
+                choice = int(input("choose animal's number to add property: ")) - 1
+
+                if choice > lenght_player_animals - 1 or choice < 0:
+                    print("error with choice number - please try again!")
+                    continue  # Zhir loop.
+
+                current_animal = player.get_player_animals()[choice]
+                current_animal.fat_cards_count += 1
+                current_animal.get_animal_properties().append("zhir")
+                break  # Zhir loop.
+            return 1
+        else:  # If property is double.
+            property_value = property_value.copy()
+            if lenght_player_animals < 2:
+                print("Error - you can't apply this property because you have only one Animal")
+                player.get_cards_hand().append(card)
+                return 0
+            elif property_value == ["sotr"]:
+                for i in range(lenght_player_animals):
+                    print("Animal ", i + 1, player.get_player_animals()[i].get_animal_properties())
+                print("choose pair of animals (example: 1,3)")
+                while 1:  # Choose sotr pair.
+                    try:
+                        choice = list(map(int, (input("pair of your animals (1,3):")).split(",")))
+                        if len(choice) != 2:
+                            print("you have to input a PAIR of numbers-animals (example: 1,2)")
+                            continue  # Choose sotr loop.
+                        elif ((0 < choice[0] <= lenght_player_animals) and
+                              (0 < choice[1] <= lenght_player_animals) and
+                              (choice[0] != choice[1])):
+                            property_value.append(choice[:][0])
+                            property_value.append(choice[:][1])
+                            print("property_value=", property_value)  # For test.
+                            property_value_reverse = []
+                            property_value_reverse.append(property_value[:][0])
+                            property_value_reverse.append(property_value[:][2])
+                            property_value_reverse.append(property_value[:][1])
+                            if ((property_value in player.get_player_animals()[
+                                choice[0] - 1].get_animal_properties()) or
+                                    (property_value in player.get_player_animals()[
+                                        choice[1] - 1].get_animal_properties())):
+                                print("This animals had been already cooperators! try another card!")
+                                player.get_cards_hand().append(card)
+                                return 0
+                            elif (property_value_reverse in player.get_player_animals()[
+                                choice[0] - 1].get_animal_properties() or
+                                  property_value_reverse in player.get_player_animals()[
+                                      choice[1] - 1].get_animal_properties()):
+                                print("This animals had been already cooperators reverse! try another card!")
+                                player.get_cards_hand().append(card)
+                                return 0
+                            else:
+                                player.get_player_animals()[choice[0] - 1].get_animal_properties().append(
+                                    property_value)
+                                player.get_player_animals()[choice[1] - 1].get_animal_properties().append(
+                                    property_value)
+                                print('Animal', choice[0], ' ',
+                                      player.get_player_animals()[choice[0] - 1].get_animal_properties())
+                                print('Animal', choice[1], ' ',
+                                      player.get_player_animals()[choice[1] - 1].get_animal_properties())
+                                break  # Choose sotr pair loop.
+
+                    except:
+                        print("exception choose pair animals! try again!")
+                        continue  # Choose sotr pair loop.
+                return 1
+            elif property_value == ["simb"]:
+                for i in range(lenght_player_animals):
+                    print("Animal ", i + 1, player.get_player_animals()[i].get_animal_properties())
+                print("choose pair of animals symbiote / not symbiote (example: 1,3)")
+                while 1:  # Choose simb pair loop.
+                    try:
+                        choice = []
+                        item = (input("pair of your animals symbiote/ not symbiote (1,3):")).split(",")
+                        for f in item[:]:
+                            choice.append(int(f))
+                        if len(choice) != 2:
+                            print("you have to input a PAIR of numbers-animals (example: 1,2)")
+                            continue  # Choose simb pair loop.
+                        elif ((0 < choice[0] <= lenght_player_animals) and
+                              (0 < choice[1] <= lenght_player_animals) and
+                              (choice[0] != choice[1])):
+                            property_value.append(choice[:][0])
+                            property_value.append(choice[:][1])
+                            property_value_reverse = []
+                            property_value_reverse.append(property_value[:][0])
+                            property_value_reverse.append(property_value[:][2])
+                            property_value_reverse.append(property_value[:][1])
+                            if ((property_value in player.get_player_animals()[
+                                choice[0] - 1].get_animal_properties()) or
+                                    (property_value in player.get_player_animals()[
+                                        choice[1] - 1].get_animal_properties())):
+                                print("This animals had been already symbiote! try another card!")
+                                player.cards_hand.append(card)
+                                return 0
+                            elif ((property_value_reverse in player.get_player_animals()[choice[0] - 1].property or
+                                   property_value_reverse in player.get_player_animals()[choice[1] - 1].property)):
+                                print("This animals had been already symbiote reverse! try another card!")
+                                player.cards_hand.append(card)
+                                return 0
+                            else:
+                                player.get_player_animals()[choice[0] - 1].get_animal_properties().append(
+                                    property_value)
+                                player.get_player_animals()[choice[1] - 1].get_animal_properties().append(
+                                    property_value)
+                                print('Animal', choice[0], ' ',
+                                      player.get_player_animals()[choice[0] - 1].get_animal_properties())
+                                print('Animal', choice[1], ' ',
+                                      player.get_player_animals()[choice[1] - 1].get_animal_properties())
+                                break  # Choose simb pair loop.
+                    except:
+                        print("exception choosing simbiont/ ne simbiont! try again!")
+                        continue  # Choose simb pair loop.
+                return 1
+            elif property_value == ["vzai"]:
+                for i in range(lenght_player_animals):
+                    print("Animal ", i + 1, player.get_player_animals()[i].property)
+                print("choose pair of animals vzaimodejstvie (example: 1,3)")
+                while 1:  # Choose vzai pair loop.
+                    try:
+                        choice = []
+                        item = (input("pair of your animals (1,3):")).split(",")
+                        for f in item[:]:
+                            choice.append(int(f))
+                        if len(choice) != 2:
+                            print("you have to input a PAIR of numbers-animals (example: 1,2)")
+                            continue  # Choose vzai pair loop.
+                        elif ((0 < choice[0] <= lenght_player_animals) and
+                              (0 < choice[1] <= lenght_player_animals) and
+                              (choice[0] != choice[1])):
+                            property_value.append(choice[:][0])
+                            property_value.append(choice[:][1])
+                            property_value_reverse = []
+                            property_value_reverse.append(property_value[:][0])
+                            property_value_reverse.append(property_value[:][2])
+                            property_value_reverse.append(property_value[:][1])
+                            if ((property_value in player.get_player_animals()[
+                                choice[0] - 1].get_animal_properties()) or
+                                    (property_value in player.get_player_animals()[
+                                        choice[1] - 1].get_animal_properties())):
+                                print("This animals had been already vzaimod! try another card!")
+                                player.get_cards_hand().append(card)
+                                return 0
+                            elif (property_value_reverse in player.get_player_animals()[
+                                choice[0] - 1].get_animal_properties() or
+                                  property_value_reverse in player.get_player_animals()[
+                                      choice[1] - 1].get_animal_properties()):
+                                print("This animals had been already vzaimod! reverse! try another card!")
+                                player.get_cards_hand().append(card)
+                                return 0
+                            else:
+                                player.get_player_animals()[choice[0] - 1].get_animal_properties().append(
+                                    property_value)
+                                player.get_player_animals()[choice[1] - 1].get_animal_properties().append(
+                                    property_value)
+                                print('Animal', choice[0], ' ',
+                                      player.get_player_animals()[choice[0] - 1].get_animal_properties())
+                                print('Animal', choice[1], ' ',
+                                      player.get_player_animals()[choice[1] - 1].get_animal_properties())
+                                break  # Choose vzai pair loop.
+                    except:
+                        print("exception choosing animals for vzai! try again!")
+                        continue  # Choose vzai pair loop.
+                return 1
+
+
 class Faza_Razvitija:
     """
     faza razvitija
     players: list - list of instances Player
     number: int - number of first player
     """
+
     def __init__(self, players: list, number: int):
         self.players = players
         self.number = number
         self.list_of_pass = []
         self.active_player = self.players[self.number]
-        self.test = False # to print test information
+        self.test = False  # to print test information
         assert type(players) == list, f'faza_razvitija(players, number): type(players) is {type(players)} not list'
         assert type(number) == int, f'faza_razvitija(players, number): type(number) is {type(number)} not int'
         assert number < len(players), f'faza_razvitija(players, number): number {number} > len(players) {len(players)}'
         for item in players:
             assert isinstance(item, Player), f'faza_razvitija(players, number): {item} from players is not instance of ' \
-                                         f'Player'
+                                             f'Player'
 
     def test_print(self):
         if self.test:
             print(f'TEST:{self.active_player}')
-
 
     def faza_rezvitija_function(self):
         while 1:
@@ -172,14 +545,14 @@ class Faza_Razvitija:
                 print("All players said PASS")
                 break  # Exit from main loop.
             elif self.number in self.list_of_pass:  # If active Player said PASS.
-                self.number = next_player(self.number, self.players)
+                self.number = functions.next_player(self.number, self.players)
                 self.active_player = self.players[self.number]
                 continue  # Continue main loop with next active Player.
             else:  # If active Player don't say PASS.
                 if not self.active_player.get_cards_hand():
                     # If Player hasn't cards in his hand - automatic PASS.
                     self.list_of_pass.append(self.number)
-                    self.number = next_player(self.number, self.players)
+                    self.number = functions.next_player(self.number, self.players)
                     self.active_player = self.players[self.number]
                     continue  # Continue main loop with next active Player.
             print("active Player ", self.active_player.get_player_name(), "=" * 20, "\n")
@@ -193,15 +566,15 @@ class Faza_Razvitija:
                 #  to possibility of returning card to deck.
                 # animal_id = 0
                 if self.active_player.get_player_animals():
-                    pass_phrase = input_function(['Y', 'y', 'n', 'N'], "do you want to say Pass (y/n)")
+                    pass_phrase = functions.input_function(['Y', 'y', 'n', 'N'], "do you want to say Pass (y/n)")
                     if pass_phrase == 'y':
                         self.list_of_pass.append(self.number)
-                    if self.number in self.list_of_pass:
                         break  # Exit from loop 'suitable'.
                     while 1:  # Loop of choose Animal/property.
                         flag_suit = 0
-                        choice = input_function(['A', 'a', 'P', 'p'], "do you want to make new Animal or\
-                                       new property? (a/p)")
+                        choice = functions.input_function(['A', 'a', 'P', 'p', 'pass'], "do you want to make new Animal"
+                                                                                        " or new property or say pass? "
+                                                                                        "(a/p/pass)")
                         if choice == 'a':
                             self.active_player.take_handcard()
                             self.active_player.make_animal()
@@ -209,7 +582,11 @@ class Faza_Razvitija:
                             break  # Exit from loop of choose Animal/property.
                         elif choice == 'p':
                             # If you can set property to the Animal:
-                            flag_suit = make_property(self.active_player, self.players)
+                            flag_suit = functions.make_property(self.active_player, self.players)
+                            break  # Exit from loop of choose Animal/property.
+                        elif choice == 'pass':
+                            self.list_of_pass.append(self.number)
+                            flag_suit = 1
                             break  # Exit from loop of choose Animal/property.
                     if flag_suit == 1:
                         break  # Exit from loop 'suitable'.
@@ -225,8 +602,8 @@ class Faza_Razvitija:
                     self.active_player.make_animal()
                     self.test_print()
                     break  # Exit from loop 'suitable'.
-            self.number = next_player(self.number, self.players)
-            active_player = self.players[self.number]
+            self.number = functions.next_player(self.number, self.players)
+            self.active_player = self.players[self.number]
             continue  # Loop 'mainloop'.
 
         for i in range(len(self.players)):
@@ -237,76 +614,9 @@ class Faza_Razvitija:
             print("=" * 20, "\n")
         print("end of faza razvitije")
         return 1
-def set_player_name():
-    """
-    set player's name
-    """
-    while True:
-        try:
-            name = str(input("input Player's name: "))
-            break
-        except ValueError:
-            print("try to input another name")
-    return name
-
-
-def next_player(num: int, players: list):
-    """Select next Player.
-    num: int - index of current player in players list
-    players: list - players list
-    return next player num or -1 if failure"""
-    assert type(num) == int, f'next_player({num},{players}): type of num ({type(num)}) is not int'
-    assert type(players) == list, f'next_player({num},{players}): type of {players} is not list'
-    assert 1 < len(players) <= 7, f'next_player({num},{players}): number of players ({len(players)}) ' \
-                                  f'are not in range(2,7)'
-    assert 0 <= num <= len(players) - 1, f'next_player({num},{players}): num = {num} not in len(players) range'
-    try:
-        result = (num + 1) % len(players)
-        return result
-    except:
-        return -1
-
-
-def take_cards(number: int, card_set: list):
-    """Take <number> of cards from <card_set> and return it and remove from <card_set>.
-    number: int - number of cards to take from card_Set
-    card_set: list - list of cards
-    return number of cards (list) from card set or -1 if failure
-    """
-    assert type(number) == int, f'take_cards({number}, {card_set}): type of number ({type(number)} is not int'
-    assert type(card_set) == list, f'take_cards({number}, {card_set}): type of card_set ({type(card_set)} is not list'
-    assert number > 0, f'take_cards({number}, {card_set}): number({number}) <= 0'
-    if number <= len(card_set):
-        try:
-            return [card_set.pop() for i in range(number)]
-        except IndexError:
-            print(f"take_cards({number}, {card_set}): number > card_set! end of cards!")
-            return -1
-    else:
-        print(f'take_cards({number}, {card_set}): error with number in take_cards function')
-        return -1
 
 
 # TODO make returncard_to_coloda function to return card
-
-def make_players_list():
-    """Make players list = [instances of Player class] by default min 2 max 8.
-    Return players_list: list  """
-    result = []
-    while True:
-        try:
-            number_of_players = int(input("input number of players (2...8)"))
-            if (number_of_players >= 8) or (number_of_players < 2):
-                print("bad number, try again")
-            else:
-                break
-        except ValueError:
-            print("value error! bad number of players, try again")
-        except NameError:
-            print("name error! bad number of players, try again")
-    for i in range(number_of_players):
-        result.append(Player(name=set_player_name()))  # List of instances of Player class.
-    return result
 
 
 def make_deck(number_of_players: int):
@@ -442,304 +752,6 @@ def make_parasite(players_list, active_num):
             print("exception input number of players or Animal! try again")
             continue  # Main loop.
     return 1
-
-
-def make_property(player, players_list):
-    """ Defines the property for Player's Animal players_list and active_num -
-        for function make_parasite.
-    player: Player() - instance of Player class
-    players_list: list - list of instances of Player()
-    """
-    assert isinstance(player, Player), f'make_property(player, card, players_list): player is not instance of Player'
-    active_num = players_list.index(player)
-    card = player.take_handcard()
-
-    def print_player_animals(player):
-        assert isinstance(player, Player), f'print_player_animals(player): player is not instance of Player'
-        number = 1
-        for animal in player.get_player_animals():
-            print(number, ' ', animal.get_animal_properties())
-            number += 1
-        return 1
-
-    if len(card) > 1:
-        while 1:
-            # Test1.  
-            try:
-                print("your card has more than one property ", card)
-                choise = int(input("choose property (1/2)"))
-                if choise == 1:
-                    property_value = card[:][0]
-                    break
-                elif choise == 2:
-                    property_value = card[:][1]
-                    break
-                else:
-                    print("incorrect input - try again!")
-            except(ValueError):
-                print("exeption! try again")
-        print("your property", property_value)
-
-    else:
-        property_value = card[:][0]  # If only one property on the card.
-        print("your property", property_value)
-
-    lenght_player_animals = len(player.get_player_animals())
-
-    if property_value not in [['vzai'], ['simb'], ['sotr'], "para", "zhir"]:
-        # Property is single and not parasite, zhir.  
-        while 1:  # Test for single properties.
-            print_player_animals(player)
-            choise = int(input("choose animal's number to add property: ")) - 1
-            if choise > lenght_player_animals - 1 or choise < 0:
-                print("error with choice number - please, try again!")
-                continue  # Test for single properrties.
-
-            current_animal = player.get_player_animals()[choise]
-            if property_value in current_animal.property:
-                # Not dubles.
-                print("This Animal already has this property! choose another Animal!")
-                ret_card = input("do you want to return your card \
-                                     to your hand? y/n")
-                if ret_card == 'y' or ret_card == 'Y':
-                    player.get_cards_hand().append(card)
-                    return 0
-                else:
-                    continue  # Test for single properies loop.
-            elif (property_value == "pada") and ("hish" in current_animal.property):
-                print("Predator can't have scavenger property")
-                ret_card = input("do you want to return your card to your hand? y/n")
-                if ret_card == 'y' or ret_card == 'Y':
-                    player.get_cards_hand().append(card)
-                    return 0
-                else:
-                    continue  # Test for single properies loop.
-            elif (property_value == "hish") and ("pada" in current_animal.property):
-                print("your Animal is scavenger - it can't be predator!")
-                ret_card = input("do you want to return your card to your hand? y/n")
-                if ret_card == 'y' or ret_card == 'Y':
-                    player.get_cards_hand().append(card)
-                    return 0
-                else:
-                    continue  # Test for single properies loop.
-            else:
-                current_animal.get_animal_properties().append(property_value)
-
-                if property_value == "vodo":
-                    current_animal.swimmimg = True
-                elif property_value == "bist":
-                    current_animal.running = True
-                elif property_value == "mimi":
-                    current_animal.mimicry = True
-                elif property_value == "pada":
-                    current_animal.scavenger = True
-                elif property_value == "pira":
-                    current_animal.piracy = True
-                    current_animal.can_piracy = True
-                elif property_value == "otbr":
-                    current_animal.tail_loss = True
-                elif property_value == "topo":
-                    current_animal.grazing = True
-                elif property_value == "bols":
-                    current_animal.hungry += 1  # If big - +1 to eat.
-                    current_animal.high_body_weight = True
-                elif property_value == "spac":
-                    current_animal.hibernation = True
-                    current_animal.hibernation_active = False
-                    current_animal.hibernation_ability = True
-                elif property_value == "jado":
-                    current_animal.poisonous = True
-                elif property_value == "norn":
-                    current_animal.burrowing = True
-                elif property_value == "komm":
-                    current_animal.camouflage = True
-                elif property_value == "ostr":
-                    current_animal.sharp_vision = True
-                elif property_value == "hish":
-                    current_animal.carnivorous = True
-                    current_animal.can_hunt = True
-                    current_animal.hungry += 1  # If carnivorous - +1 to eat.
-                break  # Test for single properties loop.
-        return 1
-    elif property_value == "para":
-        if (make_parasite(players_list, active_num)):
-            return 1
-        else:
-            player.get_cards_hand().append(card)
-            return 0
-    elif property_value == "zhir":
-        while 1:  # Zhir loop.
-            print_player_animals(player)
-            choise = int(input("choose animal's number to add property: ")) - 1
-
-            if choise > lenght_player_animals - 1 or choise < 0:
-                print("error with choice number - please try again!")
-                continue  # Zhir loop.
-
-            current_animal = player.get_player_animals()[choise]
-            current_animal.fat_cards_count += 1
-            current_animal.get_animal_properties().append("zhir")
-            break  # Zhir loop.
-        return 1
-    else:  # If property is double.
-        property_value = property_value.copy()
-        if lenght_player_animals < 2:
-            print("Error - you can't apply this property because you have only one Animal")
-            player.get_cards_hand().append(card)
-            return 0
-        elif property_value == ["sotr"]:
-            for i in range(lenght_player_animals):
-                print("Animal ", i + 1, player.get_player_animals()[i].get_animal_properties())
-            print("choose pair of animals (example: 1,3)")
-            while 1:  # Choose sotr pair.
-                try:
-                    choise = list(map(int, (input("pair of your animals (1,3):")).split(",")))
-                    if len(choise) != 2:
-                        print("you have to input a PAIR of numbers-animals (example: 1,2)")
-                        continue  # Choose sotr loop.
-                    elif ((0 < choise[0] <= lenght_player_animals) and
-                          (0 < choise[1] <= lenght_player_animals) and
-                          (choise[0] != choise[1])):
-                        property_value.append(choise[:][0])
-                        property_value.append(choise[:][1])
-                        print("property_value=", property_value)  # For test.
-                        property_value_reverse = []
-                        property_value_reverse.append(property_value[:][0])
-                        property_value_reverse.append(property_value[:][2])
-                        property_value_reverse.append(property_value[:][1])
-                        if ((property_value in player.get_player_animals()[choise[0] - 1].get_animal_properties()) or
-                                (property_value in player.get_player_animals()[choise[1] - 1].get_animal_properties())):
-                            print("This animals had been already cooperators! try another card!")
-                            player.get_cards_hand().append(card)
-                            return 0
-                        elif (property_value_reverse in player.get_player_animals()[
-                            choise[0] - 1].get_animal_properties() or
-                              property_value_reverse in player.get_player_animals()[
-                                  choise[1] - 1].get_animal_properties()):
-                            print("This animals had been already cooperators reverse! try another card!")
-                            player.get_cards_hand().append(card)
-                            return 0
-                        else:
-                            player.get_player_animals()[choise[0] - 1].get_animal_properties().append(property_value)
-                            player.get_player_animals()[choise[1] - 1].get_animal_properties().append(property_value)
-                            print('Animal', choise[0], ' ',
-                                  player.get_player_animals()[choise[0] - 1].get_animal_properties())
-                            print('Animal', choise[1], ' ',
-                                  player.get_player_animals()[choise[1] - 1].get_animal_properties())
-                            break  # Choose sotr pair loop.
-
-                except:
-                    print("exception choose pair animals! try again!")
-                    continue  # Choose sotr pair loop.
-            return 1
-        elif property_value == ["simb"]:
-            for i in range(lenght_player_animals):
-                print("Animal ", i + 1, player.get_player_animals()[i].get_animal_properties())
-            print("choose pair of animals symbiote / not symbiote (example: 1,3)")
-            while 1:  # Choose simb pair loop.
-                try:
-                    choise = []
-                    item = (input("pair of your animals symbiote/ not symbiote (1,3):")).split(",")
-                    for f in item[:]:
-                        choise.append(int(f))
-                    if len(choise) != 2:
-                        print("you have to input a PAIR of numbers-animals (example: 1,2)")
-                        continue  # Choose simb pair loop.
-                    elif ((0 < choise[0] <= lenght_player_animals) and
-                          (0 < choise[1] <= lenght_player_animals) and
-                          (choise[0] != choise[1])):
-                        property_value.append(choise[:][0])
-                        property_value.append(choise[:][1])
-                        property_value_reverse = []
-                        property_value_reverse.append(property_value[:][0])
-                        property_value_reverse.append(property_value[:][2])
-                        property_value_reverse.append(property_value[:][1])
-                        if ((property_value in player.get_player_animals()[choise[0] - 1].get_animal_properties()) or
-                                (property_value in player.get_player_animals()[choise[1] - 1].get_animal_properties())):
-                            print("This animals had been already symbiote! try another card!")
-                            player.cards_hand.append(card)
-                            return 0
-                        elif ((property_value_reverse in player.get_player_animals()[choise[0] - 1].property or
-                               property_value_reverse in player.get_player_animals()[choise[1] - 1].property)):
-                            print("This animals had been already symbiote reverse! try another card!")
-                            player.cards_hand.append(card)
-                            return 0
-                        else:
-                            player.get_player_animals()[choise[0] - 1].get_animal_properties().append(property_value)
-                            player.get_player_animals()[choise[1] - 1].get_animal_properties().append(property_value)
-                            print('Animal', choise[0], ' ',
-                                  player.get_player_animals()[choise[0] - 1].get_animal_properties())
-                            print('Animal', choise[1], ' ',
-                                  player.get_player_animals()[choise[1] - 1].get_animal_properties())
-                            break  # Choose simb pair loop.
-                except:
-                    print("exception choosing simbiont/ ne simbiont! try again!")
-                    continue  # Choose simb pair loop.
-            return 1
-        elif property_value == ["vzai"]:
-            for i in range(lenght_player_animals):
-                print("Animal ", i + 1, player.get_player_animals()[i].property)
-            print("choose pair of animals vzaimodejstvie (example: 1,3)")
-            while 1:  # Choose vzai pair loop.
-                try:
-                    choise = []
-                    item = (input("pair of your animals (1,3):")).split(",")
-                    for f in item[:]:
-                        choise.append(int(f))
-                    if len(choise) != 2:
-                        print("you have to input a PAIR of numbers-animals (example: 1,2)")
-                        continue  # Choose vzai pair loop.
-                    elif ((0 < choise[0] <= lenght_player_animals) and
-                          (0 < choise[1] <= lenght_player_animals) and
-                          (choise[0] != choise[1])):
-                        property_value.append(choise[:][0])
-                        property_value.append(choise[:][1])
-                        property_value_reverse = []
-                        property_value_reverse.append(property_value[:][0])
-                        property_value_reverse.append(property_value[:][2])
-                        property_value_reverse.append(property_value[:][1])
-                        if ((property_value in player.get_player_animals()[choise[0] - 1].get_animal_properties()) or
-                                (property_value in player.get_player_animals()[choise[1] - 1].get_animal_properties())):
-                            print("This animals had been already vzaimod! try another card!")
-                            player.get_cards_hand().append(card)
-                            return 0
-                        elif (property_value_reverse in player.get_player_animals()[
-                            choise[0] - 1].get_animal_properties() or
-                              property_value_reverse in player.get_player_animals()[
-                                  choise[1] - 1].get_animal_properties()):
-                            print("This animals had been already vzaimod! reverse! try another card!")
-                            player.get_cards_hand().append(card)
-                            return 0
-                        else:
-                            player.get_player_animals()[choise[0] - 1].get_animal_properties().append(property_value)
-                            player.get_player_animals()[choise[1] - 1].get_animal_properties().append(property_value)
-                            print('Animal', choise[0], ' ',
-                                  player.get_player_animals()[choise[0] - 1].get_animal_properties())
-                            print('Animal', choise[1], ' ',
-                                  player.get_player_animals()[choise[1] - 1].get_animal_properties())
-                            break  # Choose vzai pair loop.
-                except:
-                    print("exception choosing animals for vzai! try again!")
-                    continue  # Choose vzai pair loop.
-            return 1
-
-
-def input_function(alternatives, greeting: str):
-    """
-    alternatives: list - list of chars - what you expect from input
-    greeting: str - text to print in input
-    return lowercase user input from alternative
-    """
-    for char in alternatives:
-        assert type(char) == str, f'input_function(alternatives, greeting: str): alternatives ({char}) not from strings'
-    assert type(greeting) == str, f'input_function(alternatives, greeting: str): greeting ({greeting})is not string'
-    assert len(alternatives) >= 1, f'input_function(alternatives, greeting: str): len(alternatives)<1 ' \
-                                   f'({len(alternatives)}'
-    while True:
-        result = input(greeting)
-        if result in alternatives:
-            return result.lower()
-        print('error than input, please, try again')
 
 
 # TODO STAY HERE - troubles : I try to make thi functiono - but it shold change re_fish_count - I I don't want to make
@@ -887,7 +899,8 @@ def phase_eating(players, first_player_number, red_fish_count):
 
 
 if __name__ == "__main__":
-    players_list = make_players_list()
+
+    players_list = functions.make_players_list()
     # players_list - list of instances of class "Player"
     deck = make_deck(len(players_list))
     for player in players_list:

@@ -6,11 +6,14 @@ Created on Sep 9, 2018
 import unittest
 import module
 
+
 def test_next_player():
     """Select next Player.  """
     line = [-1, 8, 'a', chr(1099), 1, 4, 0]
-    result = list(map(module.next_player, line))
+    result = list(map(module.functions.next_player, line))
     return result
+
+
 """if len(players_list) > num + 1:
             # active_player = players_list[num +1]
             next_num = num + 1
@@ -148,5 +151,5 @@ def test_next_player():
     
 """
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testmakeanimal']
+    # import sys;sys.argv = ['', 'Test.testmakeanimal']
     print(test_next_player())
