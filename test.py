@@ -114,7 +114,7 @@ class TestEvolution(unittest.TestCase):
 
         class Player(module.Player):
             def take_handcard(self):
-                return 'property',
+                return 'hish',
 
         class functions_test(module.functions):
 
@@ -124,7 +124,7 @@ class TestEvolution(unittest.TestCase):
 
         def gen_answer():
             # put here answers to question in list
-            answers = ['1', '1', 'y']
+            answers = ['1', 'y']
             for answer in answers:
                 yield answer
 
@@ -136,7 +136,7 @@ class TestEvolution(unittest.TestCase):
         players_list = [Player(str(x)) for x in range(3)]
 
         player = players_list[0]
-        # player has one animal
+        """# player has one animal
         player.get_player_animals().append(module.Animal())
         self.assertEqual(functions_test.make_property(player, players_list), 1)
         self.assertEqual('property' in player.get_player_animals()[0].get_animal_properties(), True)
@@ -145,10 +145,29 @@ class TestEvolution(unittest.TestCase):
         players_list = [Player(str(x)) for x in range(3)]
         player = players_list[0]
         player.get_player_animals().append(module.Animal())
-        player.get_player_animals()[0].get_animal_properties().append('property,')
-        # todo property value not in animal properties - different запись it there but another
+        player.get_player_animals()[0].get_animal_properties().append('property')
         self.assertEqual(functions_test.make_property(player, players_list), 0)
         self.assertEqual(('property',) in player.get_cards_hand(), True)
+        
+        # if property value == hish and pada in animal properties
+        clear_players(players_list)
+        players_list = [Player(str(x)) for x in range(3)]
+        player = players_list[0]
+        player.get_player_animals().append(module.Animal())
+        player.get_player_animals()[0].get_animal_properties().append('hish')
+        self.assertEqual(functions_test.make_property(player, players_list), 0)
+        self.assertEqual(('pada',) in player.get_cards_hand(), True)
+        """
+        # if property value == pada and hish in animal properties
+        clear_players(players_list)
+        players_list = [Player(str(x)) for x in range(3)]
+        player = players_list[0]
+        player.get_player_animals().append(module.Animal())
+        player.get_player_animals()[0].get_animal_properties().append('pada')
+        self.assertEqual(functions_test.make_property(player, players_list), 0)
+        self.assertEqual(('hish',) in player.get_cards_hand(), True)
+        # todo похоже надо писать отдельнцю функцию дял каждой проверки - а то они мешают друг другу
+
 
 
 if __name__ == '__main__':
