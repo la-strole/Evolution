@@ -279,7 +279,7 @@ class functions:
         # take property value from card
         if len(card) > 1:
             print("your card has more than one property ", card)
-            choice = cls.input_function(['1', ' 2'], 'your card has more than one property - choose 1/2')
+            choice = cls.input_function(['1', '2'], 'your card has more than one property - choose 1/2')
             if choice == '1':
                 property_value = card[:][0]
             else:
@@ -546,7 +546,7 @@ class functions:
         for i in range(len(players_list)):
             print(i + 1, " ", players_list[i].get_player_name(), '\n', "animals:\n")
             for number, animal in enumerate(players_list[i].get_player_animals()):
-                print(f"Animal {number+1} {animal.get_animal_properties()}")
+                print(f"Animal {number + 1} {animal.get_animal_properties()}")
         print("this property you can set only to another Player's Animal")
         while 1:  # Main loop.
             try:
@@ -722,18 +722,51 @@ class Define_Eating_Base_Phase:
         """
         return self.red_fish
 
-
     def get_text_of_phase(self):
         return f'End of Define eating base phase. Food count (red fish|) = {self.red_fish}'
-
 
     def __str__(self):
         return f'Food = {self.red_fish}'
 
 
-# TODO 08 nov 2020 - test make parasite property
+class Eating_Phase:
 
-# TODO STAY HERE - troubles : I try to make thi functiono - but it shold change re_fish_count - I I don't want to make
+    def __init__(self, players: list, first_number_player: int, eating_base: int):
+        """
+        players: list - list of Players instances
+        first_number_player: int - number of first player (from main)
+        eating_base: int - number of red fish from Define_Eating_Base_Phase
+        """
+        assert type(players) == list, f'Eating_Phase.__init__(): type of players ({type(players)}) not list'
+        assert 1 < len(players) <= 8, f'Eating_Phase.__init__(): len of players not 1 < ({len(players)} <= 8)'
+        for player in players:
+            assert isinstance(player, Player), f'Eating_Phase.__init__(): {player} not instance of Player class'
+        assert type(first_number_player) == int, f'Eating_Phase.__init__(): {first_number_player} not integer'
+        assert 0 <= first_number_player <= len(players) - 1, f'Eating_Phase.__init__(): not 0 <= {first_number_player}' \
+                                                             f'<= len(players_list'
+        assert type(eating_base) == int, f'Eating_Phase.__init__(): {eating_base} not integer'
+        self.players = players
+        self.first_player = first_number_player
+        self.eating_base = eating_base
+
+    def eating_phase(self):
+        active_player = self.players[self.first_player]
+        # if all of his animals are not hungry (if yes - grazing function and active_player = next_player) if all animals of all players -
+        # end of this phase
+        # if player want to take red fish from eating base or say pass or play property
+        # 1. grazing (+) take red fish
+        # hunting without taking red fish
+        # check if scavenger is present
+        # piracy without taking red fish
+        # hibernation - without taking red fish
+        # choose animal to take red fish
+        # hunting
+        # grazing function
+        # twice properties -
+
+    # TODO STAY HERE - troubles : I try to make thi functiono - but it shold change re_fish_count - I I don't want to make
+
+
 #  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
 #  name... OMG - really shitcode...
 
@@ -893,9 +926,7 @@ if __name__ == "__main__":
     define_eating_base_phase = Define_Eating_Base_Phase(players_list)
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())
-# TODO STAY HERE - troubles : I try to make thi functiono - but it shold change re_fish_count - I I don't want to make
-#  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
-#  name... OMG - really shitcode...
+
 
 def eating_from_red_fish_base(current_animal):
     if red_fish_count > 0:
@@ -918,4 +949,3 @@ def eating_from_red_fish_base(current_animal):
         else:
             print("error with block of adding food")
             return -1
-
