@@ -168,6 +168,9 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(('hish',) in player.get_cards_hand(), True)
         # todo похоже надо писать отдельнцю функцию дял каждой проверки - а то они мешают друг другу
 
+    def test_eating_phase(self):
+        # todo write test
+        pass
 
 
 if __name__ == '__main__':
