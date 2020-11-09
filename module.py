@@ -92,6 +92,48 @@ class Player:
             print("Player.make_animal(): exception error")
             return -1
 
+    def get_hungry_animals(self):
+        """
+        returns list of hungry animals in players hand
+        """
+        return [hungry_animal for hungry_animal in self.get_player_animals() if hungry_animal.get_hungry() > 0]
+
+    def get_not_full_fat(self):
+        """
+        returns list of players animals witch fat_card_number > fat_number
+        """
+        return [not_full_fat for not_full_fat in self.get_player_animals() if not_full_fat.get_is_full_fat() > 0]
+
+    def get_grazing_count(self):
+        """
+        returns number: int
+        number of players animals with grazing property
+        """
+        return len([grazing_animal for grazing_animal in self.get_player_animals() if grazing_animal.is_grazing()])
+
+    def get_carnivorous_to_hunt(self):
+        """
+        return list of carnivorous, that can hunt (are hungry or not enough fat)
+        """
+        return [animal for animal in self.get_player_animals() if (animal.get_hungry() > 0 or
+                                                                   animal.get_is_full_fat() > 0) and
+                animal.is_carnivorius()]
+
+
+    def get_piracy(self):
+        """
+        return list of animals with piracy property
+        """
+        return [animal for animal in self.get_player_animals() if animal.is_piracy()]
+
+    def get_to_hibernation(self):
+        """
+        returns list of animals - that can use hibernation ability on this turn
+        (has hibernation property, are not in hibernate state yet, can use hibernation (it is not last turn of eating
+        phase or animal use this property in last eating phase)
+        """
+
+        return [animal for animal in self.get_player_animals() if animal.can_hibernate()]
 
 class Animal:
     def __init__(self):
@@ -129,6 +171,9 @@ class Animal:
         self.simb_can_eat = True
         self.can_hunt = True
 
+    def __str__(self):
+        return f'{self.get_animal_properties()}, hungry={self.get_hungry()}, free fat={self.get_is_full_fat()}'
+
     def get_animal_properties(self):
         """
         return property: list - list of animal properties
@@ -140,6 +185,33 @@ class Animal:
         return how hungry is animal
         """
         return self.hungry
+
+    def get_is_full_fat(self):
+        return self.fat_cards_count - self.fat
+
+    def is_grazing(self):
+        """
+        returns True if animal.grazing = True, if not - False
+        """
+        return self.grazing
+
+    def is_carnivorius(self):
+        return self.carnivorous
+
+
+    def is_piracy(self):
+        return self.piracy
+
+
+    def can_hibernate(self):
+        """
+        returns True: bool if animal can use hibernate property
+        else returns False: bool
+        """
+        if self.hibernation and self.hibernation_ability and not self.hibernation_active:
+            return True
+        else:
+            return False
 
 
 class functions:
@@ -723,7 +795,7 @@ class Define_Eating_Base_Phase:
         return self.red_fish
 
     def get_text_of_phase(self):
-        return f'End of Define eating base phase. Food count (red fish|) = {self.red_fish}'
+        return f'End of Define eating base phase. Food count (red fish) = {self.red_fish}'
 
     def __str__(self):
         return f'Food = {self.red_fish}'
@@ -749,9 +821,79 @@ class Eating_Phase:
         self.first_player = first_number_player
         self.eating_base = eating_base
 
+    def grazing_function(self, player: Player):
+        """
+        player: Player instance
+        change self.eating_base: int
+        return None
+        """
+        number = player.get_grazing_count()
+        if number < self.eating_base:
+            end_number = number
+        else:
+            end_number = self.eating_base
+        destroy_number = functions.input_function([number in range(1, end_number + 1)], f'You are using grazing '
+                                                                                        f'property to destroy '
+                                                                                        f'eating base. Input number '
+                                                                                        f'to delay from '
+                                                                                        f'eating base '
+                                                                                        f'(1-{self.eating_base})')
+        self.eating_base = self.eating_base - destroy_number
+        assert self.eating_base >= 0, f'Eating_phase.grazing_function(): destroy number > eating base'
+        print(f'new eating base = {self.eating_base}')
+
     def eating_phase(self):
         active_player = self.players[self.first_player]
-        # if all of his animals are not hungry (if yes - grazing function and active_player = next_player) if all animals of all players -
+        print(f'active player is {active_player.get_player_name()}')
+        list_of_pass = []
+        list_of_hungry_to_piracy = [] # list of animals, who take food in this turn but still are hungry
+        while True:  # main loop
+            if list_of_pass == len(self.players):
+                # todo make text end of this phase
+                break  # main loop
+            active_player_hungry_animals = active_player.get_hungry_animals()
+            active_player_not_full_fat = active_player.get_not_full_fat()
+            active_player_grazing_number = active_player.get_grazing_count()
+            # if all of his animals are not hungry or fat (if yes - grazing function and active_player = next_player)
+            if len(active_player_hungry_animals) == 0 and len(active_player_not_full_fat) == 0:
+                if active_player_grazing_number > 0 and self.eating_base > 0:
+                    answer = functions.input_function(['y', 'Y', 'n', 'N'], f'All of your animals are not hungry and '
+                                                                            f'full of fat. Do you want to use grazing '
+                                                                            f'property of your animals to destroy eating'
+                                                                            f' base {self.eating_base}? y/n ')
+                    if answer == 'y':
+                        self.grazing_function(active_player)
+                    else:
+                        active_player = functions.next_player(self.players.index(active_player), self.players)
+                        continue  # main loop
+                else:  # if not grazing animals on players hand or eating base = 0 - next player, automatic pass
+                    list_of_pass.append(active_player)
+                    active_player = functions.next_player(self.players.index(active_player), self.players)
+                    continue  # main loop
+            else:
+                # not all animals are not hungry or enough fat
+                # 1. take red fish
+                # 2. hunting
+                # 3. piracy
+                # 4. hibernation
+                print(f'This animals are hungry or have free fat slots:')
+                for number, animal in enumerate(set(active_player_hungry_animals + active_player_not_full_fat)):
+                    print(f'{number + 1} {animal}')
+                choose_list = ['take']
+                if active_player.get_carnivorous_to_hunt():
+                    choose_list.append('hunt')
+                if list_of_hungry_to_piracy and active_player.get_piracy():
+                    choose_list.append('piracy')
+                if active_player.get_to_hibernation():
+                    choose_list.append('hibernation')
+
+                answer = functions.input_function(choose_list, f'Now you have to take red fish from eating base '
+                                                               f'({self.eating_base} or do else functions, depending of'
+                                                               f" your animals property: {', '.join(choose_list)}")
+
+                print(answer)
+        # if all
+        # animals of all players - or end of red fish and and hunting, piracy, hibernation or all said pass
         # end of this phase
         # if player want to take red fish from eating base or say pass or play property
         # 1. grazing (+) take red fish
@@ -764,7 +906,7 @@ class Eating_Phase:
         # grazing function
         # twice properties -
 
-    # TODO STAY HERE - troubles : I try to make thi functiono - but it shold change re_fish_count - I I don't want to make
+
 
 
 #  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
@@ -926,7 +1068,8 @@ if __name__ == "__main__":
     define_eating_base_phase = Define_Eating_Base_Phase(players_list)
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())
-
+    eating_phase = Eating_Phase(players_list, first_number_player, food)
+    eating_phase.eating_phase()
 
 def eating_from_red_fish_base(current_animal):
     if red_fish_count > 0:
