@@ -119,7 +119,6 @@ class Player:
                                                                    animal.get_is_full_fat() > 0) and
                 animal.is_carnivorius()]
 
-
     def get_piracy(self):
         """
         return list of animals with piracy property
@@ -134,6 +133,13 @@ class Player:
         """
 
         return [animal for animal in self.get_player_animals() if animal.can_hibernate()]
+
+    def get_in_hibernation(self):
+        """
+        returns list of animals in hibernation status - so they can't hunt, piracy, etc
+        """
+        return [animal for animal in self.get_player_animals() if animal.is_hibernate()]
+
 
 class Animal:
     def __init__(self):
@@ -198,10 +204,8 @@ class Animal:
     def is_carnivorius(self):
         return self.carnivorous
 
-
     def is_piracy(self):
         return self.piracy
-
 
     def can_hibernate(self):
         """
@@ -212,6 +216,28 @@ class Animal:
             return True
         else:
             return False
+
+    def is_hibernate(self):
+        """
+        return True if animal is in hibernation
+        else return False
+        """
+        if self.hibernation_active:
+            return True
+        else:
+            return False
+
+    def is_symbiosys(self, number: int):
+        """
+        number: int - number of self.animal in Players hand
+        return: int -  number of symbiosys animal in players hand
+        if animal has not symbiont return: None
+        """
+        if self.simbiosys:
+            for property in self.simbiosys:
+                pass
+
+    # todo stay here - trouble with double proerties - rewrite make_property function?
 
 
 class functions:
@@ -513,11 +539,11 @@ class functions:
             elif property_value == ["simb"]:
                 for i in range(lenght_player_animals):
                     print("Animal ", i + 1, player.get_player_animals()[i].get_animal_properties())
-                print("choose pair of animals symbiote / not symbiote (example: 1,3)")
+                print("choose pair of animals animal /  symbiote (example: 1,3)")
                 while 1:  # Choose simb pair loop.
                     try:
                         choice = []
-                        item = (input("pair of your animals symbiote/ not symbiote (1,3):")).split(",")
+                        item = (input("pair of your animals animal/ symbiote (1,3):")).split(",")
                         for f in item[:]:
                             choice.append(int(f))
                         if len(choice) != 2:
@@ -842,11 +868,26 @@ class Eating_Phase:
         assert self.eating_base >= 0, f'Eating_phase.grazing_function(): destroy number > eating base'
         print(f'new eating base = {self.eating_base}')
 
+    def take_red_fish(self, player: Player, animals: list):
+        """
+        player: Player - active player
+        animals: list - list of animals to take red fish
+        take red fish from eating base (if it exist), reduce hungry
+        return None
+        """
+        animal_num = functions.input_function([x for x in range(1, len(animals) + 1)], f"Please, select animal to take "
+                                                                                       f"red fish from eating base: ")
+        animal = animals[int(animal_num) - 1]
+        # if animal is symbiont
+        # if animal communication
+        # if animal cooperation
+
+
     def eating_phase(self):
         active_player = self.players[self.first_player]
         print(f'active player is {active_player.get_player_name()}')
         list_of_pass = []
-        list_of_hungry_to_piracy = [] # list of animals, who take food in this turn but still are hungry
+        list_of_hungry_to_piracy = []  # list of animals, who take food in this turn but still are hungry
         while True:  # main loop
             if list_of_pass == len(self.players):
                 # todo make text end of this phase
@@ -854,6 +895,7 @@ class Eating_Phase:
             active_player_hungry_animals = active_player.get_hungry_animals()
             active_player_not_full_fat = active_player.get_not_full_fat()
             active_player_grazing_number = active_player.get_grazing_count()
+            active_player_in_hibernation = active_player.get_in_hibernation()
             # if all of his animals are not hungry or fat (if yes - grazing function and active_player = next_player)
             if len(active_player_hungry_animals) == 0 and len(active_player_not_full_fat) == 0:
                 if active_player_grazing_number > 0 and self.eating_base > 0:
@@ -876,10 +918,13 @@ class Eating_Phase:
                 # 2. hunting
                 # 3. piracy
                 # 4. hibernation
+                # 5. say pass
                 print(f'This animals are hungry or have free fat slots:')
-                for number, animal in enumerate(set(active_player_hungry_animals + active_player_not_full_fat)):
+                active_player_can_eat = set(active_player_hungry_animals + active_player_not_full_fat)
+                for number, animal in enumerate(active_player_can_eat):
                     print(f'{number + 1} {animal}')
-                choose_list = ['take']
+                # if player want to take red fish from eating base or say pass or play property
+                choose_list = ['take', 'pass']
                 if active_player.get_carnivorous_to_hunt():
                     choose_list.append('hunt')
                 if list_of_hungry_to_piracy and active_player.get_piracy():
@@ -891,11 +936,10 @@ class Eating_Phase:
                                                                f'({self.eating_base} or do else functions, depending of'
                                                                f" your animals property: {', '.join(choose_list)}")
 
-                print(answer)
         # if all
         # animals of all players - or end of red fish and and hunting, piracy, hibernation or all said pass
         # end of this phase
-        # if player want to take red fish from eating base or say pass or play property
+
         # 1. grazing (+) take red fish
         # hunting without taking red fish
         # check if scavenger is present
@@ -905,8 +949,6 @@ class Eating_Phase:
         # hunting
         # grazing function
         # twice properties -
-
-
 
 
 #  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
@@ -940,12 +982,6 @@ def eating_from_red_fish_base(current_animal):
 def carnivorous_eating_process(carnivore):
     """" here carnivore eating process"""
     # TODO write tthis function
-    pass
-
-
-def grazing_process():
-    """" remove some red fish from food base"""
-    # TODO write thi function
     pass
 
 
@@ -1070,6 +1106,7 @@ if __name__ == "__main__":
     print(define_eating_base_phase.get_text_of_phase())
     eating_phase = Eating_Phase(players_list, first_number_player, food)
     eating_phase.eating_phase()
+
 
 def eating_from_red_fish_base(current_animal):
     if red_fish_count > 0:
