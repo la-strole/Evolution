@@ -4,6 +4,8 @@ from unittest.mock import patch
 from random import randint
 
 
+
+
 class TestEvolution(unittest.TestCase):
 
     def test_next_player(self):
@@ -168,10 +170,43 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(('hish',) in player.get_cards_hand(), True)
         # todo похоже надо писать отдельнцю функцию дял каждой проверки - а то они мешают друг другу
 
-    def test_eating_phase(self):
-        # todo write test
-        pass
+    def test_grazing_function(self):
+        # make users input emulation
+        class functions_test(module.functions):
 
+            @staticmethod
+            def input_function(alternatives, greeting: str):
+                return next(answers_generator)
+
+        def gen_answer():
+            # put here answers to question in list
+            answers = ['1', 'y']
+            for answer in answers:
+                yield answer
+
+        answers_generator = gen_answer()
+
+        class test_eating_phase(module.Eating_Phase):
+            def __init__(self):
+                self.eating_base = eating_base
+
+        # make player
+        player = module.Player()
+        # make eating base
+        eating_base = 5
+        # create 10 animals
+        animals = [module.Animal() for i in range(10)]
+        # add grazing property to 0, <eating base, eating base? > eating base
+        animals_with_grazing = [0, 4, eating_base, len(animals)]
+        for number in animals_with_grazing:
+            for i in range(number):
+                animals[i].grazing = True
+            player.animals = animals
+            eating = test_eating_phase()
+            if number == 0:
+                self.assertRaises(AssertionError, eating.grazing_function, player)
+            else:
+                eating.grazing_function(player)
 
 if __name__ == '__main__':
     unittest.main()
