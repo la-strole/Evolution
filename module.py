@@ -555,7 +555,7 @@ class functions:
                     print(f'{number + 1}: {animal}')
                 while 1:  # Choose sotr pair.
                     try:
-                        choice = list(map(int, input("choose pair of animals (example: 1,3)".split(','))))
+                        choice = list(map(int, (input("choose pair of animals (example: 1,3)")).split(',')))
                         if len(choice) != 2:
                             print("you have to input a PAIR of numbers-animals (example: 1,2)")
                             continue  # Choose sotr loop.
@@ -587,7 +587,8 @@ class functions:
                     print(f'{number + 1}: {animal}')
                 while 1:  # Choose simb pair loop
                     try:
-                        choice = list(map(int, input("choose pair of your animals animal/ symbiont (1,3):".split(','))))
+                        choice = list(map(int, (input("choose pair of your animals animal/ "
+                                                      "symbiont (1,3):")).split(',')))
                         if len(choice) != 2:
                             print("you have to input a PAIR of numbers-animals (example: 1,2)")
                             continue  # Choose simb pair loop.
@@ -619,7 +620,7 @@ class functions:
                     print(f'{number + 1}: {animal}')
                 while 1:  # Choose vzai pair loop.
                     try:
-                        choice = list(map(int, input("choose pair of your animals (1,3):".split(','))))
+                        choice = list(map(int, (input("choose pair of your animals (1,3):")).split(',')))
                         if len(choice) != 2:
                             print("you have to input a PAIR of numbers-animals (example: 1,2)")
                             continue  # Choose vzai pair loop.
@@ -1010,9 +1011,9 @@ class Eating_Phase:
                     list_of_pass.append(active_player)
                     active_player = self.players[functions.next_player(self.players.index(active_player), self.players)]
                     continue # main loop
-                # todo stay here 11 11 20 - test take red fish function. problem double functions 12 1,2 and ') error
+                # todo stay here 11 11 20 - test take red fish function.
                 # todo adding simb to property list vzai - id symb id + 1
-                # todo value error look printscreen
+
 
 
         # if all

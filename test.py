@@ -172,24 +172,16 @@ class TestEvolution(unittest.TestCase):
 
     def test_grazing_function(self):
         # make users input emulation
-        class functions_test(module.functions):
 
-            @staticmethod
-            def input_function(alternatives, greeting: str):
-                return next(answers_generator)
 
-        def gen_answer():
-            # put here answers to question in list
-            answers = ['1', 'y']
-            for answer in answers:
-                yield answer
-
-        answers_generator = gen_answer()
 
         class test_eating_phase(module.Eating_Phase):
             def __init__(self):
                 self.eating_base = eating_base
 
+        @patch('module.input_function')
+        def input_function(mock_input_function):
+            mock_input_function.return_value = 1
         # make player
         player = module.Player()
         # make eating base
@@ -203,6 +195,7 @@ class TestEvolution(unittest.TestCase):
                 animals[i].grazing = True
             player.animals = animals
             eating = test_eating_phase()
+
             if number == 0:
                 self.assertRaises(AssertionError, eating.grazing_function, player)
             else:
