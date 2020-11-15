@@ -4,8 +4,6 @@ from unittest.mock import patch
 from random import randint
 
 
-
-
 class TestEvolution(unittest.TestCase):
 
     def test_next_player(self):
@@ -170,36 +168,71 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(('hish',) in player.get_cards_hand(), True)
         # todo похоже надо писать отдельнцю функцию дял каждой проверки - а то они мешают друг другу
 
-    def test_grazing_function(self):
-        # make users input emulation
+    def test_init_Eating_Phase(self):
+        """
+        unit test for Eating_Phase constructor
+        """
+        # player not a list (int instead)
+        self.assertRaises(AssertionError, module.Eating_Phase, players=1, first_number_player=0,
+                          eating_base=5)
+        # len of players < 1
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player()], first_number_player=0,
+                          eating_base=5)
+        # len of players > 8
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player() for x in range(9)],
+                          first_number_player=0, eating_base=5)
+        # not all players instances of Player() class
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player(), 1], first_number_player=0,
+                          eating_base=5)
+        # first number is no int type
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
+                          first_number_player='1', eating_base=5)
+        # first number < 0
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
+                          first_number_player=-1, eating_base=5)
+        # first number == 0
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
+                          first_number_player=0, eating_base=5)
+        # first number > len(players)
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
+                          first_number_player=3, eating_base=5)
+        # eating base not int type
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
+                          first_number_player=1, eating_base='5')
+        # eating base < 0
+        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
+                          first_number_player=1, eating_base=-1)
 
+    def test_get_grazing_count(self):
+        """
+        unit test for Player.get_grazing_count()
+        """
 
-
-        class test_eating_phase(module.Eating_Phase):
-            def __init__(self):
-                self.eating_base = eating_base
-
-        @patch('module.input_function')
-        def input_function(mock_input_function):
-            mock_input_function.return_value = 1
-        # make player
+        rand_animals = [module.Animal() for x in range(randint(1,10))]
+        for item in rand_animals:
+            item.grazing = True
+        # if player.get_grazing_count == len(animals)
         player = module.Player()
-        # make eating base
-        eating_base = 5
-        # create 10 animals
-        animals = [module.Animal() for i in range(10)]
-        # add grazing property to 0, <eating base, eating base? > eating base
-        animals_with_grazing = [0, 4, eating_base, len(animals)]
-        for number in animals_with_grazing:
-            for i in range(number):
-                animals[i].grazing = True
-            player.animals = animals
-            eating = test_eating_phase()
+        player.animals = rand_animals
+        self.assertEqual(player.get_grazing_count(), len(rand_animals))
+        # if no animals with grazing property
+        rand_animals = [module.Animal()]
+        player.animals = rand_animals
+        self.assertEqual(player.get_grazing_count(), 0)
+        # if player has not animals at all
+        player.animals = []
+        self.assertEqual(player.get_grazing_count(), 0)
 
-            if number == 0:
-                self.assertRaises(AssertionError, eating.grazing_function, player)
-            else:
-                eating.grazing_function(player)
+    def test_grazing_function(self):
+        """
+        unit test for grazing function
+        """
+        players = [module.Player() for x in range(5)]
+        for player in players:
+            pass
+        # instance of eating Phase class
+        eating_phase = module.Eating_Phase(players=players, first_number_player=0, eating_base=5)
+        # todo 15 11 2020 stop here
 
 if __name__ == '__main__':
     unittest.main()

@@ -856,14 +856,16 @@ class Eating_Phase:
         assert 0 <= first_number_player <= len(players) - 1, f'Eating_Phase.__init__(): not 0 <= {first_number_player}' \
                                                              f'<= len(players_list'
         assert type(eating_base) == int, f'Eating_Phase.__init__(): {eating_base} not integer'
+        assert eating_base >= 0, f'Eating_Phase.__init__(): {eating_base} < 0'
         self.players = players
         self.first_player = first_number_player
         self.eating_base = eating_base
 
-    def grazing_function(self, player: Player):
+    def grazing_function(self, player: Player, user_input=functions.input_function):
         """
         player: Player instance
         change self.eating_base: int
+        user_input - added to unit tst - to change user input in test.py
         return None
         """
 
@@ -874,7 +876,7 @@ class Eating_Phase:
             end_number = number
         else:
             end_number = self.eating_base
-        destroy_number = functions.input_function([str(number) for number in range(1, end_number + 1)],
+        destroy_number = user_input([str(number) for number in range(1, end_number + 1)],
                                                   f'You are using grazing property to destroy eating base. Input number'
                                                   f'to delay from eating base (1-{end_number})')
         self.eating_base = self.eating_base - int(destroy_number)
