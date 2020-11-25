@@ -879,15 +879,19 @@ class Eating_Phase:
         destroy_number = user_input([str(number) for number in range(1, end_number + 1)],
                                                   f'You are using grazing property to destroy eating base. Input number'
                                                   f'to delay from eating base (1-{end_number})')
-        self.eating_base = self.eating_base - int(destroy_number)
-        assert self.eating_base >= 0, f'Eating_phase.grazing_function(): destroy number > eating base'
+        if self.eating_base - int(destroy_number) > 0:
+            self.eating_base = self.eating_base - int(destroy_number)
+        else:
+            print(f'Eating_phase.grazing_function(): destroy number > eating base')
+            raise AssertionError
         print(f'new eating base = {self.eating_base}')
 
-    def take_red_fish(self, player: Player):
+    def take_red_fish(self, player: Player, user_input=functions.input_function):
         """
         player: Player - active player
         eating base : int
         take red fish from eating base (if it exist), reduce hungry
+        make pair properties
         return None
         """
         assert isinstance(player, Player), f'Eating_phase.take_red_fish(): {player} is no Player instance'
@@ -895,7 +899,7 @@ class Eating_Phase:
         if self.eating_base > 0:
             animals = player.get_player_animals()
             while True:  # choose loop
-                animal_num = functions.input_function([str(x) for x in range(1, len(animals) + 1)],
+                animal_num = user_input([str(x) for x in range(1, len(animals) + 1)],
                                                       f"Please, select animal to take red fish from eating base: ")
                 animal = animals[int(animal_num) - 1]
                 if animal.get_hungry() == 0 and animal.get_is_full_fat() == 0:

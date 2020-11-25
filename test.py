@@ -208,7 +208,7 @@ class TestEvolution(unittest.TestCase):
         unit test for Player.get_grazing_count()
         """
 
-        rand_animals = [module.Animal() for x in range(randint(1,10))]
+        rand_animals = [module.Animal() for x in range(randint(1, 10))]
         for item in rand_animals:
             item.grazing = True
         # if player.get_grazing_count == len(animals)
@@ -227,12 +227,42 @@ class TestEvolution(unittest.TestCase):
         """
         unit test for grazing function
         """
+
+        # define user input function
+        def test_input1(*args):
+            return '6'
+
+        def test_input2(*args):
+            return '2'
+
         players = [module.Player() for x in range(5)]
-        for player in players:
-            pass
+        # add grazing animlas to Player[0]
+        grazing_animal = module.Animal()
+        grazing_animal.grazing = True
+        for i in range(5):
+            players[0].animals.append(grazing_animal)
         # instance of eating Phase class
         eating_phase = module.Eating_Phase(players=players, first_number_player=0, eating_base=5)
-        # todo 15 11 2020 stop here
+        # eating base < 0
+        eating_phase.eating_base = 0
+        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0])
+        # player has not grazing animals
+        eating_phase.eating_base = 5
+        self.assertRaises(AssertionError, eating_phase.grazing_function, players[1])
+        # destroy  elements > of eating base
+        eating_phase.eating_base = 5
+        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0],
+                          test_input1)
+        # destroy 2 elements of red fish
+        eating_phase.eating_base = 5
+        eating_phase.grazing_function(players[0], test_input2)
+        self.assertEqual(eating_phase.eating_base, 3)
+
+    def test_take_red_fish(self):
+        """
+        unit test for module.eating_phase.take_red_fish function
+        """
+
 
 if __name__ == '__main__':
     unittest.main()
