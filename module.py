@@ -877,8 +877,8 @@ class Eating_Phase:
         else:
             end_number = self.eating_base
         destroy_number = user_input([str(number) for number in range(1, end_number + 1)],
-                                                  f'You are using grazing property to destroy eating base. Input number'
-                                                  f'to delay from eating base (1-{end_number})')
+                                    f'You are using grazing property to destroy eating base. Input number'
+                                    f'to delay from eating base (1-{end_number})')
         if self.eating_base - int(destroy_number) > 0:
             self.eating_base = self.eating_base - int(destroy_number)
         else:
@@ -900,7 +900,7 @@ class Eating_Phase:
             animals = player.get_player_animals()
             while True:  # choose loop
                 animal_num = user_input([str(x) for x in range(1, len(animals) + 1)],
-                                                      f"Please, select animal to take red fish from eating base: ")
+                                        f'Please, select animal to take red fish from eating base: ')
                 animal = animals[int(animal_num) - 1]
                 if animal.get_hungry() == 0 and animal.get_is_full_fat() == 0:
                     print('this animal is not hungry and is enough fat! Choose another animal!')
@@ -953,12 +953,12 @@ class Eating_Phase:
         list_of_pass = []
         list_of_hungry_to_piracy = []  # list of animals, who take food in this turn but still are hungry
         while True:  # main loop
-            #print(f'TEST list of pass = {list_of_pass}')
+            # print(f'TEST list of pass = {list_of_pass}')
             if len(list_of_pass) == len(self.players):
                 # todo make text end of this phase
 
                 break  # main loop
-            print(f'{"-"*10}active player - {active_player.get_player_name()} {"-"*10}')
+            print(f'{"-" * 10}active player - {active_player.get_player_name()} {"-" * 10}')
             active_player_hungry_animals = active_player.get_hungry_animals()
             active_player_not_full_fat = active_player.get_not_full_fat()
             active_player_grazing_number = active_player.get_grazing_count()
@@ -1012,15 +1012,13 @@ class Eating_Phase:
                         if answer == 'y':
                             self.grazing_function(active_player)
                     active_player = self.players[functions.next_player(self.players.index(active_player), self.players)]
-                    continue # main loop
+                    continue  # main loop
                 if answer == 'pass':
                     list_of_pass.append(active_player)
                     active_player = self.players[functions.next_player(self.players.index(active_player), self.players)]
-                    continue # main loop
+                    continue  # main loop
                 # todo stay here 11 11 20 - test take red fish function.
                 # todo adding simb to property list vzai - id symb id + 1
-
-
 
         # if all
         # animals of all players - or end of red fish and and hunting, piracy, hibernation or all said pass
@@ -1039,8 +1037,6 @@ class Eating_Phase:
 
 #  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
 #  name... OMG - really shitcode...
-
-
 
 
 def carnivorous_eating_process(carnivore):
@@ -1170,5 +1166,3 @@ if __name__ == "__main__":
     print(define_eating_base_phase.get_text_of_phase())
     eating = Eating_Phase(players_list, first_number_player, food)
     eating.eating_phase()
-
-

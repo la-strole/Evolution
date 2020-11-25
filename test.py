@@ -262,6 +262,33 @@ class TestEvolution(unittest.TestCase):
         """
         unit test for module.eating_phase.take_red_fish function
         """
+        # emulation user input
+        def fun(*args):
+            answers = ['1', '2']
+            for item in answers:
+                yield item
+
+        f = fun()
+
+        def user_input(*ars):
+            return next(f)
+
+        players = [module.Player() for x in range(5)]
+        eating_phase = module.Eating_Phase(players, first_number_player=0, eating_base=5)
+        # if eating base <= 0
+        eating_phase.eating_base = 0
+        eating_phase.take_red_fish(players[0], user_input)
+        self.assertEqual(eating_phase.eating_base, 0)
+        # adding animals to player
+        for i in range(3):
+            players[0].animals.append(module.Animal())
+        players[0].animals[0].hungry = 0
+        # if animal is not hungry and has no free fat (look at text this animal is not hungry and is enough fat!
+        # Choose another animal!) next animal is hungry
+        eating_phase.eating_base = 5
+        eating_phase.take_red_fish(players[0], user_input)
+        self.assertEqual(players[0].animals[1].hungry, 0)
+        self.assertEqual(eating_phase.eating_base, 4)
 
 
 if __name__ == '__main__':
