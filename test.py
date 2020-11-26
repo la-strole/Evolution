@@ -264,7 +264,7 @@ class TestEvolution(unittest.TestCase):
         """
         # emulation user input
         def fun(*args):
-            answers = ['1', '2']
+            answers = ['1', '2', '1', '1', '2', '1', '1', '1', '1', '1']
             for item in answers:
                 yield item
 
@@ -273,12 +273,20 @@ class TestEvolution(unittest.TestCase):
         def user_input(*ars):
             return next(f)
 
+        def standard_values(player):
+            """
+            set player's animals property to default values
+            """
+            for animal in player.animals:
+                animal.hungry = 1
+                animal.fat = 0
+                animal.fat_cards_count = 0
+                animal.simbiosys = []
+                animal.communication = []
+                animal.cooperation = []
+
         players = [module.Player() for x in range(5)]
         eating_phase = module.Eating_Phase(players, first_number_player=0, eating_base=5)
-        # if eating base <= 0
-        eating_phase.eating_base = 0
-        eating_phase.take_red_fish(players[0], user_input)
-        self.assertEqual(eating_phase.eating_base, 0)
         # adding animals to player
         for i in range(3):
             players[0].animals.append(module.Animal())
@@ -286,10 +294,89 @@ class TestEvolution(unittest.TestCase):
         # if animal is not hungry and has no free fat (look at text this animal is not hungry and is enough fat!
         # Choose another animal!) next animal is hungry
         eating_phase.eating_base = 5
-        eating_phase.take_red_fish(players[0], user_input)
+        eating_phase.take_red_fish(players[0], user_input) # answers [0], [1]
         self.assertEqual(players[0].animals[1].hungry, 0)
+        self.assertEqual(players[0].animals[1].fat, 0)
         self.assertEqual(eating_phase.eating_base, 4)
-
-
+        # return standard values
+        standard_values(players[0])
+        # if animal is not hungry but has free fat
+        eating_phase.eating_base = 5
+        players[0].animals[0].hungry = 0
+        players[0].animals[0].fat_cards_count = 1
+        eating_phase.take_red_fish(players[0], user_input) # answers[2]
+        self.assertEqual(eating_phase.eating_base, 4)
+        self.assertEqual(players[0].animals[0].fat, 1)
+        # return standards values
+        standard_values(players[0])
+        # if animal has hungry simbiont - it can't eat
+        eating_phase.eating_base = 5
+        # add symbiosis
+        players[0].animals[0].add_symbiosys(players[0].animals[1])
+        # symbiosys is hungry
+        # look at text 'one of its symbionts is hungry: {symbiont} - this animal cant eat'
+        eating_phase.take_red_fish(players[0], user_input) # answers [3], [4]
+        self.assertEqual(eating_phase.eating_base, 4)
+        # now symbiont is not hungry
+        players[0].animals[1].hungry = 0
+        eating_phase.take_red_fish(players[0], user_input) # answers [5]
+        self.assertEqual(eating_phase.eating_base, 3)
+        self.assertEqual(players[0].animals[0].hungry, 0)
+        # set default values
+        standard_values(players[0])
+        eating_phase.eating_base = 5
+        # todo if eating base is not empty and if all animals are symbiosys each to other (say pass before take red fish function)
+        # if animal has communication
+        # make communication property 0-1
+        players[0].animals[0].add_communication(players[0].animals[1])
+        players[0].animals[1].add_communication(players[0].animals[0])
+        # 1. if communicator is hungry and there are enough red fish
+        eating_phase.take_red_fish(players[0], user_input) # answers [6]
+        self.assertEqual(eating_phase.eating_base, 3)
+        self.assertEqual(players[0].animals[0].hungry, 0)
+        self.assertEqual(players[0].animals[1].hungry, 0)
+        self.assertEqual(players[0].animals[0].fat, 0)
+        self.assertEqual(players[0].animals[1].fat, 0)
+        # 2. if communicaotor is not hungry, but is  enough fat and there are enough red fish
+        standard_values(players[0])
+        eating_phase.eating_base = 5
+        # make communication property 0-1
+        players[0].animals[0].add_communication(players[0].animals[1])
+        players[0].animals[1].add_communication(players[0].animals[0])
+        players[0].animals[1].hungry = 0
+        players[0].animals[1].fat_cards_count = 1
+        eating_phase.take_red_fish(players[0], user_input)  # answers [7]
+        self.assertEqual(eating_phase.eating_base, 3)
+        self.assertEqual(players[0].animals[0].hungry, 0)
+        self.assertEqual(players[0].animals[1].hungry, 0)
+        self.assertEqual(players[0].animals[0].fat, 0)
+        self.assertEqual(players[0].animals[1].fat, 1)
+        # 3. if communicator is hungry but there are not enpugh red fish
+        standard_values(players[0])
+        eating_phase.eating_base = 1
+        # make communication property 0-1
+        players[0].animals[0].add_communication(players[0].animals[1])
+        players[0].animals[1].add_communication(players[0].animals[0])
+        eating_phase.take_red_fish(players[0], user_input)  # answers [8]
+        self.assertEqual(eating_phase.eating_base, 0)
+        self.assertEqual(players[0].animals[0].hungry, 0)
+        self.assertEqual(players[0].animals[1].hungry, 1)
+        self.assertEqual(players[0].animals[0].fat, 0)
+        self.assertEqual(players[0].animals[1].fat, 0)
+        # 4. if communicator is not hungry but has extra fat card - but not enough red fish
+        standard_values(players[0])
+        eating_phase.eating_base = 1
+        # make communication property 0-1
+        players[0].animals[0].add_communication(players[0].animals[1])
+        players[0].animals[1].add_communication(players[0].animals[0])
+        players[0].animals[1].hungry = 0
+        players[0].animals[1].fat_cards_count = 1
+        eating_phase.take_red_fish(players[0], user_input)  # answers [9]
+        self.assertEqual(eating_phase.eating_base, 0)
+        self.assertEqual(players[0].animals[0].hungry, 0)
+        self.assertEqual(players[0].animals[1].hungry, 0)
+        self.assertEqual(players[0].animals[0].fat, 0)
+        self.assertEqual(players[0].animals[1].fat, 0)
+        # todo make cooperation property test 26 11 2020
 if __name__ == '__main__':
     unittest.main()

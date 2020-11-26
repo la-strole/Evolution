@@ -275,7 +275,7 @@ class Animal:
     def add_communication(self, animal):
         """
         animal: Animal
-        add communicate to current animal, append it to animal.symbiont list
+        add communicate to current animal, append it to animal.communication list
         return: None
         """
         assert isinstance(animal, Animal), f'Animal.add_communication(): {animal} is not instance of Animal class'
@@ -892,58 +892,63 @@ class Eating_Phase:
         eating base : int
         take red fish from eating base (if it exist), reduce hungry
         make pair properties
+        assume that there are hungry or not full fat animals in player hand
+        assume that eating base is not emtpy
         return None
         """
         assert isinstance(player, Player), f'Eating_phase.take_red_fish(): {player} is no Player instance'
         assert type(self.eating_base) == int, f'Eating_phase.take_red_fish(): {self.eating_base} is not integer'
-        if self.eating_base > 0:
-            animals = player.get_player_animals()
-            while True:  # choose loop
-                animal_num = user_input([str(x) for x in range(1, len(animals) + 1)],
-                                        f'Please, select animal to take red fish from eating base: ')
-                animal = animals[int(animal_num) - 1]
-                if animal.get_hungry() == 0 and animal.get_is_full_fat() == 0:
-                    print('this animal is not hungry and is enough fat! Choose another animal!')
+        assert self.eating_base > 0, f'Eating_phase.take_red_fish(): {self.eating_base} <= 0'
+        animals = player.get_player_animals()
+        while True:  # choose loop
+            animal_num = user_input([str(x) for x in range(1, len(animals) + 1)],
+                                    f'Please, select animal to take red fish from eating base: ')
+            animal = animals[int(animal_num) - 1]
+            if animal.get_hungry() == 0 and animal.get_is_full_fat() == 0:
+                print('this animal is not hungry and is enough fat! Choose another animal!')
+                continue  # choose loop
+            # if animal has symbiont
+            if animal.get_symbiosys():
+                hungry_symbiont = False
+                for symbiont in animal.get_symbiosys():
+                    if symbiont.get_hungry() > 0:
+                        print(f'one of its symbionts is hungry: {symbiont} - this animal cant eat')
+                        hungry_symbiont = True
+                        break # for symbiont loop
+                if hungry_symbiont:
                     continue  # choose loop
-                # if animal has symbiont
-                elif animal.get_symbiosys():
-                    for symbiont in animal.get_symbiosys():
-                        if symbiont.get_hungry() > 0:
-                            print(f'one of its symbionts is hungry: {symbiont} - this animal cant eat')
-                            continue  # choose loop
-                # if animal is hungry
-                elif animal.get_hungry() > 0:
-                    animal.reduce_hungry()
+
+            # if animal is hungry
+            if animal.get_hungry() > 0:
+                animal.reduce_hungry()
+                self.eating_base -= 1
+                break  # choose loop
+            # if animal has free fat
+            elif animal.get_is_full_fat() > 0:
+                self.eating_base -= 1
+                animal.increase_fat()
+                break  # choose loop
+        # if animal communication
+        if animal.get_communication():
+            for communicate in animal.get_communication():
+                if communicate.get_hungry() > 0 and self.eating_base > 0:
+                    communicate.reduce_hungry()
+                    print(f'communication property - {communicate} get one red fish from eating base')
                     self.eating_base -= 1
-                    break  # choose loop
-                # if animal has free fat
-                elif animal.get_is_full_fat() > 0:
+                elif communicate.get_is_full_fat() > 0 and self.eating_base > 0:
+                    communicate.increase_fat()
+                    print(f'communication property - {communicate} get one red fish from eating base')
                     self.eating_base -= 1
-                    animal.increase_fat()
-                    break  # choose loop
-            # if animal communication
-            if animal.get_communication():
-                for communicate in animal.get_communication():
-                    if communicate.get_hungry() > 0 and self.eating_base > 0:
-                        communicate.reduce_hungry()
-                        print(f'communication property - {communicate} get one red fish from eating base')
-                        self.eating_base -= 1
-                    elif communicate.get_is_full_fat() > 0 and self.eating_base > 0:
-                        communicate.increase_fat()
-                        print(f'communication property - {communicate} get one red fish from eating base')
-                        self.eating_base -= 1
-            # if animal cooperation
-            if animal.get_cooperation():
-                for cooperator in animal.get_cooperation():
-                    if cooperator.get_hungry() > 0:
-                        cooperator.reduce_hungry()
-                        print(f'cooperation property - {cooperator} get one blue fish to reduce its hungry')
-                    elif cooperator.get_is_full_fat() > 0:
-                        cooperator.increase_fat()
-                        print(f'cooperation property - {cooperator} get one blue fish to increase its fat')
-        else:
-            print('eating base is empty!')
-            self.eating_base = 0
+        # if animal cooperation
+        if animal.get_cooperation():
+            for cooperator in animal.get_cooperation():
+                if cooperator.get_hungry() > 0:
+                    cooperator.reduce_hungry()
+                    print(f'cooperation property - {cooperator} get one blue fish to reduce its hungry')
+                elif cooperator.get_is_full_fat() > 0:
+                    cooperator.increase_fat()
+                    print(f'cooperation property - {cooperator} get one blue fish to increase its fat')
+
 
     def eating_phase(self):
         """
@@ -972,6 +977,7 @@ class Eating_Phase:
                                                                             f' base {self.eating_base}? y/n ')
                     if answer == 'y':
                         self.grazing_function(active_player)
+                    # todo if say yes - not next player
                     else:
                         active_player = self.players[functions.next_player(self.players.index(active_player),
                                                                            self.players)]
