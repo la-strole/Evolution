@@ -914,7 +914,7 @@ class Eating_Phase:
                     if symbiont.get_hungry() > 0:
                         print(f'one of its symbionts is hungry: {symbiont} - this animal cant eat')
                         hungry_symbiont = True
-                        break # for symbiont loop
+                        break  # for symbiont loop
                 if hungry_symbiont:
                     continue  # choose loop
 
@@ -949,20 +949,37 @@ class Eating_Phase:
                     cooperator.increase_fat()
                     print(f'cooperation property - {cooperator} get one blue fish to increase its fat')
 
+    def single_round_eating(self, players, active_player):
+        """
+        realize single round of eating phaze
+        players: list - list of Players()
+        active_player - Player() instance of first player
+        """
+        assert type(players) == list, f'Eating_Phase.single_round_eating(): players are not list'
+        for player in players:
+            assert isinstance(player, Player), f'Eating_Phase.single_round_eating(): {player} is not Player() instance'
+        assert isinstance(active_player, Player), f'Eating_Phase.single_round_eating(): ' \
+                                                  f'{active_player} is not Player() instance'
+        assert active_player in players, f'Eating_Phase.single_round_eating(): {active_player} is not players list'
+        list_of_round_pass = []
+        list_of_hungry_to_piracy = []  # list of animals, who take food in this turn but still are hungry
 
-    def eating_phase(self):
+    def eating_phase(self, user_input=functions.input_function):
         """
         return None
         """
         active_player = self.players[self.first_player]
-        list_of_pass = []
-        list_of_hungry_to_piracy = []  # list of animals, who take food in this turn but still are hungry
+        list_of_pass = []  # list of players who say pass
+        l
+        # todo try to realize single round (whitout while main loop)
         while True:  # main loop
             # print(f'TEST list of pass = {list_of_pass}')
             if len(list_of_pass) == len(self.players):
                 # todo make text end of this phase
-
+                print('TEST - end of phaza eating')
                 break  # main loop
+            if active_player in list_of_pass:
+                continue  # main loop
             print(f'{"-" * 10}active player - {active_player.get_player_name()} {"-" * 10}')
             active_player_hungry_animals = active_player.get_hungry_animals()
             active_player_not_full_fat = active_player.get_not_full_fat()
@@ -971,13 +988,15 @@ class Eating_Phase:
             # if all of his animals are not hungry or fat (if yes - grazing function and active_player = next_player)
             if len(active_player_hungry_animals) == 0 and len(active_player_not_full_fat) == 0:
                 if active_player_grazing_number > 0 and self.eating_base > 0:
-                    answer = functions.input_function(['y', 'Y', 'n', 'N'], f'All of your animals are not hungry and '
-                                                                            f'full of fat. Do you want to use grazing '
-                                                                            f'property of your animals to destroy eating'
-                                                                            f' base {self.eating_base}? y/n ')
+                    answer = user_input(['y', 'Y', 'n', 'N'], f'All of your animals are not hungry and '
+                                                              f'full of fat. Do you want to use grazing '
+                                                              f'property of your animals to destroy eating'
+                                                              f' base {self.eating_base}? y/n ')
                     if answer == 'y':
-                        self.grazing_function(active_player)
-                    # todo if say yes - not next player
+                        self.grazing_function(active_player, user_input)
+                        active_player = self.players[functions.next_player(self.players.index(active_player),
+                                                                           self.players)]
+                        continue  # main loop
                     else:
                         active_player = self.players[functions.next_player(self.players.index(active_player),
                                                                            self.players)]
@@ -1006,15 +1025,15 @@ class Eating_Phase:
                 if active_player.get_to_hibernation():
                     choose_list.append('hibernation')
 
-                answer = functions.input_function(choose_list, f'Now you have to take red fish from eating base '
-                                                               f'({self.eating_base} or do else functions, depending of'
-                                                               f" your animals property: {', '.join(choose_list)}")
+                answer = user_input(choose_list, f'Now you have to take red fish from eating base '
+                                                 f'({self.eating_base} or do else functions, depending of'
+                                                 f" your animals property: {', '.join(choose_list)}")
                 if answer == 'take':
                     self.take_red_fish(active_player)
                     if active_player_grazing_number > 0 and self.eating_base > 0:
-                        answer = functions.input_function(['y', 'Y', 'n', 'N'],
-                                                          'Do you want to use grazing property of your animals to '
-                                                          f'destroy eating base {self.eating_base}? y/n ')
+                        answer = user_input(['y', 'Y', 'n', 'N'],
+                                            'Do you want to use grazing property of your animals to '
+                                            f'destroy eating base {self.eating_base}? y/n ')
                         if answer == 'y':
                             self.grazing_function(active_player)
                     active_player = self.players[functions.next_player(self.players.index(active_player), self.players)]
