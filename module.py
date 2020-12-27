@@ -148,6 +148,17 @@ class Player:
         return [animal for animal in self.get_player_animals() if animal.is_hibernate()]
 
 
+    def get_animals_can_eat(self):
+        """
+        returns players animals: list
+        whitch are:
+        1. hungry (animal.get_hungry() > 0) or
+        2. has free fat slots
+        3. all symbiosys are not hungry
+        """
+        answer = [animal for animal in self.get_player_animals() if animal.can_eat()]
+        return answer
+
 class Animal:
     def __init__(self):
         animal_id = 0
@@ -272,6 +283,19 @@ class Animal:
         """
         return self.simbiosys
 
+
+    def are_hungry_symbiosys(self):
+        """
+        return True if there are hungry symbionts (then animal can't eat), else return False
+        """
+
+        symbiosys_list = self.get_symbiosys()
+        for symbiont in symbiosys_list:
+            if symbiont.get_hungry > 0:
+                return True
+        return False
+
+
     def add_communication(self, animal):
         """
         animal: Animal
@@ -301,6 +325,21 @@ class Animal:
         returns list of cooperation of current animal (instances of Animal class)
         """
         return self.cooperation
+
+
+    def can_eat(self):
+        """
+        Returns True if animal is hungry, or is free fat slots, and it's symbionts are not hungry,
+                     it is not in hibernation status
+        else:: returns False
+        """
+        if (self.get_hungry() > 0 or self.get_is_full_fat() > 0) and not self.is_hibernate():
+            if self.get_symbiosys():
+                for symbiont in self.get_symbiosys():
+                    if symbiont.get_hungry > 0:
+                        return False
+            return True
+        return False
 
 
 class functions:
@@ -727,20 +766,19 @@ class functions:
                 return True
         return False
 
-
     @staticmethod
-    def are_hungry_symbiosys(animal: Animal):
+    def exist_can_eat_animals(list_of_animals: list):
         """
-        animal: Animal() instance
-        return True if there are hungry symbionts (then animal can't eat), else return False
+        list_of_animals: list of Animal() instances
+        return True if there are animals witch can eat
         """
-        assert isinstance(animal, Animal), f'Functions.are_hungry_symbiosys(animal: Animal): animal is not Animal ' \
-                                           f'instance'
-        symbiosys_list = animal.get_symbiosys()
-        for symbiont in symbiosys_list:
-            if symbiont.get_hungry > 0:
+        assert type(list_of_animals) == list, f'Functions.exist_can_eat_animals(): list of animals is not list type'
+        for animal in list_of_animals:
+            assert isinstance(animal, Animal), f'Functions.exist_can_eat_animals(): animal is not Animal() instance'
+            if animal.can_eat():
                 return True
         return False
+
 
 class Faza_Razvitija:
     """
@@ -926,7 +964,7 @@ class Eating_Phase:
             print(f'Eating_phase.grazing_function(): destroy number > eating base')
             raise AssertionError
         print(f'new eating base = {self.eating_base}')
-   # todo if animal has hungrry symbiosusu = it can't eat - change cooperaton and communication properties
+
     @staticmethod
     def communication(animal: Animal, eating_base: int):
         """
@@ -945,14 +983,13 @@ class Eating_Phase:
         communicative_relationships = []
         #  initialize for first animal with hungry/ not full fat communicative animals
         for item in animal.get_communication():
-            if item.get_hungry() > 0 or item.get_is_full_fat() > 0:
+            if item.can_eat():
                 if item not in communicative_relationships:
                     communicative_relationships.append(item)
         took_red_fish = []
         def recursive_find_communicate(animal: Animal, eating_base: int):
             # base case:
-            if eating_base == 0 or not functions.are_not_full_fat_animals(communicative_relationships) or (
-               not functions.are_hungry_animals(communicative_relationships)) or(
+            if eating_base == 0 or not functions.exist_can_eat_animals(communicative_relationships) or (
                len(took_red_fish) == len(communicative_relationships)):
                return eating_base
             else:
@@ -971,7 +1008,7 @@ class Eating_Phase:
                 animal_to_take = communicative_relationships[int(choose)-1]
                 if animal_to_take.get_communication():
                     for item in animal_to_take.get_communication():
-                        if item.get_hungry() > 0 or item.get_is_full_fat() > 0:
+                        if item.can_eat():
                             if item not in communicative_relationships:
                                 communicative_relationships.append(item)
                 eating_base -= 1
@@ -1001,17 +1038,16 @@ class Eating_Phase:
         assert isinstance(animal, Animal), f'Eating_Phase.cooperation(animal):, animal is not Animal() instance'
         assert animal.get_cooperation(), f'Eating_Phase.cooperation(animal):, animal has not cooperations'
         cooperative_relationships = []
-        #  initialize for first animal with hungry/ not full fat cooperative animals
+        #  initialize for first animal with hungry/ not full fat / not hungry symbiosys cooperative animals
         for item in animal.get_cooperation():
-            if item.get_hungry() > 0 or item.get_is_full_fat() > 0:
+            if item.can_eat():
                 if item not in cooperative_relationships:
                     cooperative_relationships.append(item)
         took_blue_fish = []
 
         def recursive_find_cooperate(animal: Animal):
             # base case:
-            if not functions.are_not_full_fat_animals(cooperative_relationships) or (
-               not functions.are_hungry_animals(cooperative_relationships)) or(
+            if not functions.exist_can_eat_animals(cooperative_relationships) or(
                len(cooperative_relationships) == len(took_blue_fish)):
                     return None
             else:
@@ -1030,7 +1066,7 @@ class Eating_Phase:
                 animal_to_take = cooperative_relationships[int(choose) - 1]
                 if animal_to_take.get_cooperation():
                     for item in animal_to_take.get_cooperation():
-                        if item.get_hungry() > 0 or item.get_is_full_fat() > 0:
+                        if item.can_eat():
                             if item not in cooperative_relationships:
                                 cooperative_relationships.append(item)
                 if animal_to_take.get_hungry() > 0:
@@ -1046,69 +1082,80 @@ class Eating_Phase:
 
         return None
 
-
-    def take_red_fish(self, player: Player, user_input=functions.input_function):
+    @staticmethod
+    def take_red_fish(animal: Animal, eating_base, user_input=functions.input_function):
         """
-        player: Player - active player
-        eating base : int
+        animal: Animal instance
+        eating_base: int - self.eating base (red fish count)
         take red fish from eating base (if it exist), reduce hungry
         make pair properties
-        assume symbiosys (if they are) of this animal are not hungry
-        assume that there are hungry or not full fat animals in player hand
+        assume animal can eat
         assume that eating base is not emtpy
-        return None
+        return new eating base
         """
 
-        assert isinstance(player, Player), f'Eating_phase.take_red_fish(): {player} is no Player instance'
-        assert type(self.eating_base) == int, f'Eating_phase.take_red_fish(): {self.eating_base} is not integer'
-        assert self.eating_base > 0, f'Eating_phase.take_red_fish(): {self.eating_base} <= 0'
+        assert isinstance(animal, Animal), f'Eating_phase.take_red_fish(): {animal} is no Animal instance'
+        assert type(eating_base) == int, f'Eating_phase.take_red_fish(): {eating_base} is not integer'
+        assert eating_base > 0, f'Eating_phase.take_red_fish(): {eating_base} <= 0'
+        assert animal.can_eat(), f'Eating_phase.take_red_fish(): {animal} can not eat ' \
+                                 f'(hungry={animal.get_hungry()}, free_Fat={animal.get_is_full_fat()},' \
+                                 f'hungry_symbiosys={animal.are_hungry_symbiosys()}))'
 
-        animals = player.get_player_animals()
-        while True:  # choose loop
-            animal_num = user_input([str(x) for x in range(1, len(animals) + 1)],
-                                    f'Please, select animal to take red fish from eating base: ')
-            animal = animals[int(animal_num) - 1]
-            if animal.get_hungry() == 0 and animal.get_is_full_fat() == 0:
-                print('this animal is not hungry and is enough fat! Choose another animal!')
-                continue  # choose loop
-            # if animal has symbiont
-            if animal.get_symbiosys():
-                hungry_symbiont = False
-                for symbiont in animal.get_symbiosys():
-                    if symbiont.get_hungry() > 0:
-                        print(f'one of its symbionts is hungry: {symbiont} - this animal cant eat')
-                        hungry_symbiont = True
-                        break  # for symbiont loop
-                if hungry_symbiont:
-                    continue  # choose loop
+        eating_base -= 1
+        # if animal is hungry
+        if animal.get_hungry() > 0:
+            animal.reduce_hungry()
 
-            # if animal is hungry
-            if animal.get_hungry() > 0:
-                animal.reduce_hungry()
-                self.eating_base -= 1
-                break  # choose loop
-            # if animal has free fat
-            elif animal.get_is_full_fat() > 0:
-                self.eating_base -= 1
-                animal.increase_fat()
-                break  # choose loop
+        # if animal has free fat
+        elif animal.get_is_full_fat() > 0:
+            animal.increase_fat()
+
         # if animal communication
-        if animal.get_communication() and self.eating_base > 0:
-            self.eating_base = Eating_Phase.communication(animal, self.eating_base)
+        if animal.get_communication() and eating_base > 0:
+            eating_base = Eating_Phase.communication(animal, eating_base)
         # if animal cooperation
         if animal.get_cooperation():
             Eating_Phase.cooperation(animal)
+        return eating_base
 
-    def single_turn(self, player):
+    # todo stay here 28 12 2020 write littke functions
+
+
+
+    def single_turn_eat(self, player, user_input=functions.input_function):
         """
-        realize single turn for player - Player() of eating phaze
+        realize single turn of eating for player - Player() of eating phaze
+        assume: Player has animals that can eat
+        player: Player() instance
+        user_input - function (for test, by default - function.input_function)
         """
         assert isinstance(player, Player)
+        assert functions.exist_can_eat_animals(player.get_player_animals()), f'Eating_Phase.single_turn():' \
+                                                                             f'there are not animals witch can eat ' \
+                                                                             f'from these player (assume they would be)'
         print(f'{"-" * 10}active player - {player.get_player_name()} {"-" * 10}')
+
         active_player_hungry_animals = player.get_hungry_animals()
         active_player_not_full_fat = player.get_not_full_fat()
-        active_player_grazing_number = player.get_grazing_count()
-        active_player_piracy_animals = 
+        active_player_piracy_animals = player.get_piracy()
+        active_player_hubernation_ability = player.get_to_hibernation()
+        active_player_in_hiberantion = player.get_in_hibernation()
+
+
+        animals = player.get_player_animals()
+        for number, animal in enumerate(animals):
+            print(f'{number + 1}: {animal}')
+        while True:  # choose loop
+            animal_num = user_input([str(x + 1) for x in range(len(animals))],
+                                    f'Please, select animal to take red fish from eating base: ')
+            animal = animals[int(animal_num) - 1]
+            if not animal.can_eat():
+                print('this animal can not eat, please, choose another animal')
+                continue  # choose loop
+            else:
+                break # choose loop
+
+
 
 
     def single_round_eating(self, players, active_player):
