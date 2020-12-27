@@ -166,7 +166,7 @@ class TestEvolution(unittest.TestCase):
         player.get_player_animals()[0].get_animal_properties().append('pada')
         self.assertEqual(functions_test.make_property(player, players_list), 0)
         self.assertEqual(('hish',) in player.get_cards_hand(), True)
-        # todo похоже надо писать отдельнцю функцию дял каждой проверки - а то они мешают друг другу
+
 
     def test_init_Eating_Phase(self):
         """
