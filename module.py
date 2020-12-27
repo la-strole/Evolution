@@ -728,6 +728,20 @@ class functions:
         return False
 
 
+    @staticmethod
+    def are_hungry_symbiosys(animal: Animal):
+        """
+        animal: Animal() instance
+        return True if there are hungry symbionts (then animal can't eat), else return False
+        """
+        assert isinstance(animal, Animal), f'Functions.are_hungry_symbiosys(animal: Animal): animal is not Animal ' \
+                                           f'instance'
+        symbiosys_list = animal.get_symbiosys()
+        for symbiont in symbiosys_list:
+            if symbiont.get_hungry > 0:
+                return True
+        return False
+
 class Faza_Razvitija:
     """
     faza razvitija
@@ -912,7 +926,7 @@ class Eating_Phase:
             print(f'Eating_phase.grazing_function(): destroy number > eating base')
             raise AssertionError
         print(f'new eating base = {self.eating_base}')
-    # todo player choose what first - communication or cooperation
+   # todo if animal has hungrry symbiosusu = it can't eat - change cooperaton and communication properties
     @staticmethod
     def communication(animal: Animal, eating_base: int):
         """
@@ -1039,14 +1053,16 @@ class Eating_Phase:
         eating base : int
         take red fish from eating base (if it exist), reduce hungry
         make pair properties
+        assume symbiosys (if they are) of this animal are not hungry
         assume that there are hungry or not full fat animals in player hand
         assume that eating base is not emtpy
         return None
         """
-        # todo wrong with communicaton and cooperation - they may be in  a ring - see FAQ
+
         assert isinstance(player, Player), f'Eating_phase.take_red_fish(): {player} is no Player instance'
         assert type(self.eating_base) == int, f'Eating_phase.take_red_fish(): {self.eating_base} is not integer'
         assert self.eating_base > 0, f'Eating_phase.take_red_fish(): {self.eating_base} <= 0'
+
         animals = player.get_player_animals()
         while True:  # choose loop
             animal_num = user_input([str(x) for x in range(1, len(animals) + 1)],
@@ -1117,7 +1133,7 @@ class Eating_Phase:
         active_player = self.players[self.first_player]
         list_of_pass = []  # list of players who say pass
         l
-        # todo try to realize single round (whitout while main loop)
+        # todo try to realize single round (whitout while main loop) realize function can eat - for animal with fat hungry symbiosys, not hebirnate
         while True:  # main loop
             # print(f'TEST list of pass = {list_of_pass}')
             if len(list_of_pass) == len(self.players):
@@ -1131,6 +1147,7 @@ class Eating_Phase:
             active_player_not_full_fat = active_player.get_not_full_fat()
             active_player_grazing_number = active_player.get_grazing_count()
             active_player_in_hibernation = active_player.get_in_hibernation()
+            active_player_symbiosus =
             # if all of his animals are not hungry or fat (if yes - grazing function and active_player = next_player)
             if len(active_player_hungry_animals) == 0 and len(active_player_not_full_fat) == 0:
                 if active_player_grazing_number > 0 and self.eating_base > 0:
@@ -1153,6 +1170,7 @@ class Eating_Phase:
                     continue  # main loop
             else:
                 # not all animals are not hungry or enough fat
+                # don't forget about symbiosysy!
                 # 1. take red fish
                 # 2. hunting
                 # 3. piracy
@@ -1175,6 +1193,7 @@ class Eating_Phase:
                                                  f'({self.eating_base} or do else functions, depending of'
                                                  f" your animals property: {', '.join(choose_list)}")
                 if answer == 'take':
+
                     self.take_red_fish(active_player)
                     if active_player_grazing_number > 0 and self.eating_base > 0:
                         answer = user_input(['y', 'Y', 'n', 'N'],
@@ -1204,7 +1223,7 @@ class Eating_Phase:
         # hunting
         # grazing function
         # twice properties -
-
+        # fat card - to eat (it is not red or blue fish)
 
 #  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
 #  name... OMG - really shitcode...
