@@ -147,7 +147,6 @@ class Player:
         """
         return [animal for animal in self.get_player_animals() if animal.is_hibernate()]
 
-
     def get_animals_can_eat(self):
         """
         returns players animals: list
@@ -158,6 +157,7 @@ class Player:
         """
         answer = [animal for animal in self.get_player_animals() if animal.can_eat()]
         return answer
+
 
 class Animal:
     def __init__(self):
@@ -196,10 +196,12 @@ class Animal:
         self.can_hunt = True
 
     def __str__(self):
-        return f'{self.get_animal_properties()}, hungry={self.get_hungry()}, free fat={self.get_is_full_fat()}'
+        return f'id={self.animal_id}, {self.get_animal_properties()}, hungry={self.get_hungry()}, ' \
+               f'free fat={self.get_is_full_fat()}'
 
     def __repr__(self):
-        return f'{self.get_animal_properties()}, hungry={self.get_hungry()}, free fat={self.get_is_full_fat()}'
+        return f'id={self.animal_id}, {self.get_animal_properties()}, hungry={self.get_hungry()}, ' \
+               f'free fat={self.get_is_full_fat()}'
 
     def get_animal_properties(self):
         """
@@ -240,13 +242,11 @@ class Animal:
         """
         self.fat -= number
 
-
     def get_is_full_fat(self):
         """
         return int - number of yellow (fat) fish animal can take
         """
         return self.fat_cards_count - self.fat
-
 
     def is_grazing(self):
         """
@@ -254,20 +254,17 @@ class Animal:
         """
         return self.grazing
 
-
     def is_carnivorous(self):
         """
         return: Bool - if animal is carnivorous
         """
         return self.carnivorous
 
-
     def is_piracy(self):
         """
         return: Bool - if animal has piracy property
         """
         return self.piracy
-
 
     def can_hibernate(self):
         """
@@ -279,7 +276,6 @@ class Animal:
         else:
             return False
 
-
     def is_hibernate(self):
         """
         return True if animal is in hibernation
@@ -290,14 +286,12 @@ class Animal:
         else:
             return False
 
-
     def to_hibernate(self):
         """
         Put animal to hibernate state
         return: None
         """
         self.hibernation_active = True
-
 
     def hibernation_ability_False(self):
         """
@@ -306,14 +300,12 @@ class Animal:
         """
         self.hibernation_ability = False
 
-
     def hibernation_ability_True(self):
         """
         change hibernation ability state - True
         return: None
         """
         self.hibernation_ability = True
-
 
     def add_symbiosys(self, animal):
         """
@@ -330,7 +322,6 @@ class Animal:
         """
         return self.simbiosys
 
-
     def are_hungry_symbiosys(self):
         """
         return True if there are hungry symbionts (then animal can't eat), else return False
@@ -341,7 +332,6 @@ class Animal:
             if symbiont.get_hungry > 0:
                 return True
         return False
-
 
     def add_communication(self, animal):
         """
@@ -373,7 +363,6 @@ class Animal:
         """
         return self.cooperation
 
-
     def can_eat(self):
         """
         Returns True if animal is hungry, or is free fat slots, and it's symbionts are not hungry,
@@ -383,7 +372,7 @@ class Animal:
         if (self.get_hungry() > 0 or self.get_is_full_fat() > 0) and not self.is_hibernate():
             if self.get_symbiosys():
                 for symbiont in self.get_symbiosys():
-                    if symbiont.get_hungry > 0:
+                    if symbiont.get_hungry() > 0:
                         return False
             return True
         return False
@@ -799,7 +788,6 @@ class functions:
                 return True
         return False
 
-
     @staticmethod
     def are_not_full_fat_animals(list_of_animals: list):
         """
@@ -1015,7 +1003,7 @@ class Eating_Phase:
         return eating_base
 
     @staticmethod
-    def communication(animal: Animal, eating_base: int):
+    def communication(animal: Animal, eating_base: int, user_input=functions.input_function):
         """
         Realize communication function - to realize ring of communication properties
         (communication property works only with red fish taking)
@@ -1023,12 +1011,16 @@ class Eating_Phase:
         assume: animal has communications relationships with other animals
         animal: Animal() instance
         eating_base: int - number of red fish in eating base
+        user_input - to test to emulate user input
         return: new eating_base
         """
         assert type(eating_base) == int, f'Eating_Phase.communication(animal, eating base):, ' \
                                          f'eating_base is not integer'
+        assert eating_base > 0, f'Eating_Phase.communication(animal, eating base):, ' \
+                                f'eating_base < 0'
         assert isinstance(animal, Animal), f'Eating_Phase.communication(animal):, animal is not Animal() instance'
         assert animal.get_communication(), f'Eating_Phase.communication(animal):, animal has not communications'
+
         communicative_relationships = []
         #  initialize for first animal with hungry/ not full fat communicative animals
         for item in animal.get_communication():
@@ -1036,31 +1028,35 @@ class Eating_Phase:
                 if item not in communicative_relationships:
                     communicative_relationships.append(item)
         took_red_fish = []
-        def recursive_find_communicate(animal: Animal, eating_base: int):
+        first_animal = animal
+
+        def recursive_find_communicate(animal: Animal, eating_base: int, user_input):
             # base case:
-            if eating_base == 0 or not functions.exist_can_eat_animals(communicative_relationships) or (
-               len(took_red_fish) == len(communicative_relationships)):
-               return eating_base
+
+            if eating_base == 0 or not functions.exist_can_eat_animals(list(set(communicative_relationships) -
+                                                                            set(took_red_fish))) or (
+                    len(took_red_fish) == len(communicative_relationships)):
+                return eating_base
+
             else:
                 # only one animal has communication property
-                if len(communicative_relationships) == 1:
-                    choose = 1
+                if len(communicative_relationships) - len(took_red_fish) == 1:
+                    animal_to_take = (set(communicative_relationships) - set(took_red_fish)).pop()
                 else:
                     # 2. ask player what animal should take  the red fish
-                    to_choose_list = [x for x in communicative_relationships if x not in took_red_fish]
+                    to_choose_list = [x for x in communicative_relationships if (x not in took_red_fish) and (
+                                      x.can_eat())]
                     for number, _ in enumerate(to_choose_list):
-                        print(f'{number+1}: = {_}')
+                        print(f'{number + 1}: = {_}')
 
-                    choose = functions.input_function([str(_ + 1) for _ in range(len(to_choose_list))],
-                                                              f'please, select number of animal from communication list to '
-                                                              f'take red fish from eating base: ')
-                animal_to_take = communicative_relationships[int(choose)-1]
-                if animal_to_take.get_communication():
-                    for item in animal_to_take.get_communication():
-                        if item.can_eat():
-                            if item not in communicative_relationships:
-                                communicative_relationships.append(item)
+                    choose = user_input([str(_ + 1) for _ in range(len(to_choose_list))],
+                                                      f'please, select number of animal from communication list to '
+                                                      f'take red fish from eating base: ')
+
+                    animal_to_take = to_choose_list[int(choose) - 1]
+
                 eating_base -= 1
+
                 if animal_to_take.get_hungry() > 0:
                     animal_to_take.reduce_hungry()
                     print(f'animal {animal_to_take} reduce hungry to {animal_to_take.get_hungry()}')
@@ -1069,13 +1065,26 @@ class Eating_Phase:
                     print(f'animal {animal_to_take} reduce fat to {animal_to_take.get_fat()}')
                 else:
                     raise ValueError
+
                 took_red_fish.append(animal_to_take)
-                return recursive_find_communicate(animal_to_take, eating_base)
+
+                if animal_to_take.get_communication():
+                    for item in animal_to_take.get_communication():
+                        if item.can_eat():
+                            if item not in communicative_relationships:
+                                if item == first_animal and len(took_red_fish) == 1:
+                                    continue
+                                else:
+                                    communicative_relationships.append(item)
+
+                return recursive_find_communicate(animal_to_take, eating_base, user_input)
+
+        eating_base = recursive_find_communicate(animal, eating_base, user_input)
 
         return eating_base
 
     @staticmethod
-    def cooperation(animal: Animal):
+    def cooperation(animal: Animal, user_input):
         """
         Realize cooperation function - to realize ring of cooperation properties
         (cooperation property works only with blue fish taking)
@@ -1093,31 +1102,32 @@ class Eating_Phase:
                 if item not in cooperative_relationships:
                     cooperative_relationships.append(item)
         took_blue_fish = []
+        first_animal = animal
 
-        def recursive_find_cooperate(animal: Animal):
+        def recursive_find_cooperate(animal: Animal, user_input):
             # base case:
-            if not functions.exist_can_eat_animals(cooperative_relationships) or(
-               len(cooperative_relationships) == len(took_blue_fish)):
-                    return None
+
+            if not functions.exist_can_eat_animals(list(set(cooperative_relationships) - set(took_blue_fish))) or (
+                    len(took_blue_fish) == len(cooperative_relationships)):
+                return None
+
             else:
-                # only one animal has cooperation property
-                if len(cooperative_relationships) == 1:
-                    choose = 1
+                # only one animal has communication property
+                if len(cooperative_relationships) - len(took_blue_fish) == 1:
+                    animal_to_take = (set(cooperative_relationships) - set(took_blue_fish)).pop()
                 else:
-                    # 2. ask player what animal should take  the blue fish
-                    to_choose_list = [x for x in cooperative_relationships if x not in took_blue_fish]
+                    # 2. ask player what animal should take  the red fish
+                    to_choose_list = [x for x in cooperative_relationships if (x not in took_blue_fish) and (
+                                      x.can_eat())]
                     for number, _ in enumerate(to_choose_list):
                         print(f'{number + 1}: = {_}')
 
-                    choose = functions.input_function([str(_ + 1) for _ in range(len(to_choose_list))],
-                                                      f'please, select number of animal from cooperation list to '
-                                                      f'take blue fish: ')
-                animal_to_take = cooperative_relationships[int(choose) - 1]
-                if animal_to_take.get_cooperation():
-                    for item in animal_to_take.get_cooperation():
-                        if item.can_eat():
-                            if item not in cooperative_relationships:
-                                cooperative_relationships.append(item)
+                    choose = user_input([str(_ + 1) for _ in range(len(to_choose_list))],
+                                                      f'please, select number of animal from communication list to '
+                                                      f'take red fish from eating base: ')
+
+                    animal_to_take = to_choose_list[int(choose) - 1]
+
                 if animal_to_take.get_hungry() > 0:
                     animal_to_take.reduce_hungry()
                     print(f'animal {animal_to_take} reduce hungry to {animal_to_take.get_hungry()}')
@@ -1126,10 +1136,25 @@ class Eating_Phase:
                     print(f'animal {animal_to_take} reduce fat to {animal_to_take.get_fat()}')
                 else:
                     raise ValueError
+
                 took_blue_fish.append(animal_to_take)
-                return recursive_find_cooperate(animal_to_take)
+
+                if animal_to_take.get_communication():
+                    for item in animal_to_take.get_communication():
+                        if item.can_eat():
+                            if item not in cooperative_relationships:
+                                if item == first_animal and len(took_blue_fish) == 1:
+                                    continue
+                                else:
+                                    cooperative_relationships.append(item)
+
+                return recursive_find_cooperate(animal_to_take, user_input)
+
+        recursive_find_cooperate(animal, user_input)
 
         return None
+
+
 
     @staticmethod
     def take_red_fish(animal: Animal, eating_base, user_input=functions.input_function):
@@ -1500,4 +1525,3 @@ if __name__ == "__main__":
     define_eating_base_phase = Define_Eating_Base_Phase(players_list)
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())
-
