@@ -245,17 +245,17 @@ class TestEvolution(unittest.TestCase):
         eating_phase = module.Eating_Phase(players=players, first_number_player=0, eating_base=5)
         # eating base < 0
         eating_phase.eating_base = 0
-        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0])
+        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0], eating_phase.eating_base)
         # player has not grazing animals
         eating_phase.eating_base = 5
-        self.assertRaises(AssertionError, eating_phase.grazing_function, players[1])
+        self.assertRaises(AssertionError, eating_phase.grazing_function, players[1], eating_phase.eating_base)
         # destroy  elements > of eating base
         eating_phase.eating_base = 5
-        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0],
+        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0], eating_phase.eating_base,
                           test_input1)
         # destroy 2 elements of red fish
         eating_phase.eating_base = 5
-        eating_phase.grazing_function(players[0], test_input2)
+        eating_phase.eating_base = eating_phase.grazing_function(players[0], eating_phase.eating_base, test_input2)
         self.assertEqual(eating_phase.eating_base, 3)
 
     def test_take_red_fish(self):
@@ -434,42 +434,6 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(players[0].animals[0].fat, 0)
         self.assertEqual(players[0].animals[1].fat, 1)
 
-    def test_eating_phase(self):
-        """
-        unit test for module.Eating_Phase.eating_phase() function
-        """
-        # user input emulation
-        # emulation user input
-        # -----------------------------------------------------------------------------
-        def user_answers(*args):
-            answers = ['y', '2', 'n'
-                       ]
-            for item in answers:
-                yield item
-
-        f = user_answers()
-
-        def user_input(*ars):
-            return next(f)
-
-        # ------------------------------------
-
-        # make Eating_Phase instance
-        players = [module.Player(str(x)) for x in range(5)]
-        players[0].animals = [module.Animal() for x in range(3)]
-        first_number_player = 0
-        eating_base = 5
-        # todo if eating base is not empty and if all animals are symbiosys each to other (say pass before take red fish function)
-        # only first player has animals
-        # if all animals are not hungry and fat enough, but there are 2 grazing
-        for animal in players[0].animals:
-            animal.hungry = 0
-            animal.fat_cards_count = 0
-        players[0].animals[0].grazing = True
-        players[0].animals[1].grazing = True
-        eating_phase = module.Eating_Phase(players, first_number_player, eating_base)
-        eating_phase.eating_phase(user_input)
-        self.assertEqual(eating_phase.eating_base, 3)
 
 
 

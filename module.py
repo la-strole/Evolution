@@ -124,7 +124,7 @@ class Player:
         """
         return [animal for animal in self.get_player_animals() if (animal.get_hungry() > 0 or
                                                                    animal.get_is_full_fat() > 0) and
-                animal.is_carnivorius()]
+                animal.is_carnivorous()]
 
     def get_piracy(self):
         """
@@ -233,8 +233,20 @@ class Animal:
         """
         self.fat += number
 
+    def reduce_fat(self, number=1):
+        """
+        decreases fat on number
+        return: None
+        """
+        self.fat -= number
+
+
     def get_is_full_fat(self):
+        """
+        return int - number of yellow (fat) fish animal can take
+        """
         return self.fat_cards_count - self.fat
+
 
     def is_grazing(self):
         """
@@ -242,11 +254,20 @@ class Animal:
         """
         return self.grazing
 
-    def is_carnivorius(self):
+
+    def is_carnivorous(self):
+        """
+        return: Bool - if animal is carnivorous
+        """
         return self.carnivorous
 
+
     def is_piracy(self):
+        """
+        return: Bool - if animal has piracy property
+        """
         return self.piracy
+
 
     def can_hibernate(self):
         """
@@ -258,6 +279,7 @@ class Animal:
         else:
             return False
 
+
     def is_hibernate(self):
         """
         return True if animal is in hibernation
@@ -267,6 +289,31 @@ class Animal:
             return True
         else:
             return False
+
+
+    def to_hibernate(self):
+        """
+        Put animal to hibernate state
+        return: None
+        """
+        self.hibernation_active = True
+
+
+    def hibernation_ability_False(self):
+        """
+        change hibernation ability state - False
+        return: None
+        """
+        self.hibernation_ability = False
+
+
+    def hibernation_ability_True(self):
+        """
+        change hibernation ability state - True
+        return: None
+        """
+        self.hibernation_ability = True
+
 
     def add_symbiosys(self, animal):
         """
@@ -940,30 +987,32 @@ class Eating_Phase:
         self.first_player = first_number_player
         self.eating_base = eating_base
 
-    def grazing_function(self, player: Player, user_input=functions.input_function):
+    @staticmethod
+    def grazing_function(player: Player, eating_base: int, user_input=functions.input_function):
         """
         player: Player instance
-        change self.eating_base: int
+        change eating_base: int
         user_input - added to unit tst - to change user input in test.py
-        return None
+        return new eating base
         """
 
         number = player.get_grazing_count()
-        assert self.eating_base > 0, f'Eating_Phase.grazing_function() - self.eating base <= 0'
+        assert eating_base > 0, f'Eating_Phase.grazing_function() - self.eating base <= 0'
         assert number > 0, f'Eating_Phase.grazing_function() - number of animals with grazing property - 0'
-        if number < self.eating_base:
+        if number < eating_base:
             end_number = number
         else:
-            end_number = self.eating_base
+            end_number = eating_base
         destroy_number = user_input([str(number) for number in range(1, end_number + 1)],
                                     f'You are using grazing property to destroy eating base. Input number'
                                     f'to delay from eating base (1-{end_number})')
-        if self.eating_base - int(destroy_number) > 0:
-            self.eating_base = self.eating_base - int(destroy_number)
+        if eating_base - int(destroy_number) > 0:
+            eating_base = eating_base - int(destroy_number)
         else:
             print(f'Eating_phase.grazing_function(): destroy number > eating base')
             raise AssertionError
-        print(f'new eating base = {self.eating_base}')
+        print(f'new eating base = {eating_base}')
+        return eating_base
 
     @staticmethod
     def communication(animal: Animal, eating_base: int):
@@ -1118,9 +1167,62 @@ class Eating_Phase:
             Eating_Phase.cooperation(animal)
         return eating_base
 
-    # todo stay here 28 12 2020 write littke functions
+    @staticmethod
+    def fat_to_blue_fish(animal: Animal, user_input=functions.input_function):
+        """
+        change fat cards to blue fish cards, decrease hungry
+        animal: Animal instance
+        user_input - function to user input
+        assume Animal has fat cards
+        assume animal is hungry
+        return None
+        """
+        assert isinstance(animal, Animal), f'EatingPhase.fat_to_blue_fish(): animal is not Animal instance'
+        assert animal.get_fat() > 0, f'EatingPhase.fat_to_blue_fish(): animal is not fat cards'
+        assert animal.get_hungry() > 0, f'EatingPhase.fat_to_blue_fish(): animal is not hungry'
+
+        number = user_input([str(x + 1) for x in range(animal.get_fat()) if x + 1 <= animal.get_hungry()],
+                            f'choose number of fat to change to blue fish:')
+
+        animal.reduce_fat(int(number))
+        animal.reduce_hungry(int(number))
+        print(f'animal {animal} change {number} fat to blue cards: hungry={animal.get_hungry()}')
+
+    @staticmethod
+    def hibernation(animal: Animal):
+        """
+        Put animal in hibernation state, change hibernation ability to False
+        animal: Animal instance
+        assume animal has hibernation ability
+        assume animal is not in hibernation state
+        assume it is not last turn
+        assume it is not used twice
+        return: None
+        """
+
+        assert isinstance(animal, Animal), f'EatingPhase.hibernation(): animal is not Animal instance'
+        assert animal.can_hibernate(), f'EatingPhase.hibernate(): animal can not hibernate now'
+
+        animal.to_hibernate()
+        animal.hibernation_ability_False()
+
+    @staticmethod
+    def hunting(animal: Animal):
+        """
+        hunting process
+        animal: Animal instance
+        assume animal is carnivorous
+        assume animal can hunt
+        assume there are animals to hunt
+        return: None
+        """
+        assert isinstance(animal, Animal), f'EatingPhase.hunting(): animal is not Animal instance'
+        assert animal.is_carnivorous(), f'EatingPhase.hunting(): animal is not carnivorous'
+        assert animal.can_eat(), f'EatingPhase.hunting(): animal can not eat (not hungry and full fat, in hibernation ' \
+                                 f'state or has hungry symbiont'
 
 
+'''
 
     def single_turn_eat(self, player, user_input=functions.input_function):
         """
@@ -1276,10 +1378,7 @@ class Eating_Phase:
 #  name... OMG - really shitcode...
 
 
-def carnivorous_eating_process(carnivore):
-    """" here carnivore eating process"""
-    # TODO write tthis function
-    pass
+
 
 
 def phase_eating(players, first_player_number, red_fish_count):
@@ -1383,7 +1482,7 @@ def phase_eating(players, first_player_number, red_fish_count):
     else:
         print(f"error! trouble with players_list in faza pit function")
         return -1
-
+'''
 
 if __name__ == "__main__":
 
@@ -1401,5 +1500,4 @@ if __name__ == "__main__":
     define_eating_base_phase = Define_Eating_Base_Phase(players_list)
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())
-    eating = Eating_Phase(players_list, first_number_player, food)
-    eating.eating_phase()
+
