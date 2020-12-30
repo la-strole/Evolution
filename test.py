@@ -408,7 +408,136 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animals[4].hungry, 0)
         self.assertEqual(animals[5].hungry, 0)
 
-    '''def test_take_red_fish(self):
+
+    def test_cooperation(self):
+        """
+        unit test for module.cooperation()
+        """
+        # create animal
+        animals = [module.Animal() for x in range(3)]
+
+        # test assertions
+        # ------------------------
+
+        # animal has cooperation property
+        self.assertRaises(AssertionError, module.Eating_Phase.cooperation, animals[0])
+        # animal is no Animal intance
+        self.assertRaises(AssertionError, module.Eating_Phase.cooperation, 1)
+        # -------------------------
+
+        # first case two animals
+        animals[0].add_cooperation(animals[1])
+        animals[1].add_cooperation(animals[0])
+
+        answer = module.Eating_Phase.cooperation(animals[0])
+        self.assertEqual(answer, None)
+        self.assertEqual(animals[1].get_hungry(), 0)
+        self.assertEqual(animals[0].get_hungry(), 1)
+        '''
+        # second case tree in the ring and base case - len(took_red_fish) == len(communication_relation)
+        animals = [module.Animal() for x in range(3)]
+        animals[0].add_communication(animals[1])
+        animals[0].add_communication(animals[2])
+        animals[1].add_communication(animals[0])
+        animals[1].add_communication(animals[2])
+        animals[2].add_communication(animals[0])
+        animals[2].add_communication(animals[1])
+
+        def user_answers(*args):
+            return '1'
+
+        eating_base = module.Eating_Phase.communication(animals[0], eating_base=3, user_input=user_answers)
+        self.assertEqual(eating_base, 0)
+        self.assertEqual(animals[0].get_hungry(), 0)
+        self.assertEqual(animals[1].get_hungry(), 0)
+        self.assertEqual(animals[2].get_hungry(), 0)
+
+        # third case tree in the ring and base case - eating base == 0
+        animals = [module.Animal() for x in range(3)]
+        animals[0].add_communication(animals[1])
+        animals[0].add_communication(animals[2])
+        animals[1].add_communication(animals[0])
+        animals[1].add_communication(animals[2])
+        animals[2].add_communication(animals[0])
+        animals[2].add_communication(animals[1])
+
+        def user_answers(*args):
+            return '1'
+
+        eating_base = module.Eating_Phase.communication(animals[0], eating_base=2, user_input=user_answers)
+        self.assertEqual(eating_base, 0)
+        self.assertEqual(animals[0].hungry, 1)
+        self.assertEqual(animals[1].hungry, 0)
+        self.assertEqual(animals[2].hungry, 0)
+
+        # forth case tree in the ring and base case - animals[2] can't eat
+        animals = [module.Animal() for x in range(3)]
+        animals[0].add_communication(animals[1])
+        animals[0].add_communication(animals[2])
+        animals[1].add_communication(animals[0])
+        animals[1].add_communication(animals[2])
+        animals[2].add_communication(animals[0])
+        animals[2].add_communication(animals[1])
+
+        animals[2].add_symbiosys(module.Animal())
+
+        def user_answers(*args):
+            return '1'
+
+        eating_base = module.Eating_Phase.communication(animals[0], eating_base=3, user_input=user_answers)
+        self.assertEqual(eating_base, 2)
+        self.assertEqual(animals[0].hungry, 1)
+        self.assertEqual(animals[1].hungry, 0)
+        self.assertEqual(animals[2].hungry, 1)
+
+        # fifth case six in the two rings and base case - animals[2] can't eat
+        animals = [module.Animal() for x in range(6)]
+        id = 1
+        for animal in animals:
+            animal.animal_id = id
+            id += 1
+        animals[0].add_communication(animals[1])
+        animals[0].add_communication(animals[2])
+        animals[0].add_communication(animals[3])
+        animals[0].add_communication(animals[5])
+        animals[1].add_communication(animals[0])
+        animals[1].add_communication(animals[2])
+        animals[1].add_communication(animals[4])
+        animals[2].add_communication(animals[0])
+        animals[2].add_communication(animals[1])
+        animals[2].add_communication(animals[3])
+        animals[3].add_communication(animals[2])
+        animals[3].add_communication(animals[0])
+        animals[4].add_communication(animals[1])
+        animals[5].add_communication(animals[4])
+        animals[5].add_communication(animals[0])
+
+
+        def user_generator():
+            answers = ['1', '4', '3', '3', '1']
+            for answer in answers:
+                yield answer
+
+        f = user_generator()
+
+        def user_input(*args):
+            return next(f)
+
+        eating_base = module.Eating_Phase.communication(animals[0], eating_base=6, user_input=user_input)
+        self.assertEqual(eating_base, 0)
+        self.assertEqual(animals[0].hungry, 0)
+        self.assertEqual(animals[1].hungry, 0)
+        self.assertEqual(animals[2].hungry, 0)
+        self.assertEqual(animals[3].hungry, 0)
+        self.assertEqual(animals[4].hungry, 0)
+        self.assertEqual(animals[5].hungry, 0)
+    
+        # eating bse <= 0
+        eating_base = 0
+        answer  = module.Eating_Phase.cooperation(animals[0])
+        self.assertEqual(answer, None)
+    
+    def test_take_red_fish(self):
         """
         unit test for module.eating_phase.take_red_fish function
         """

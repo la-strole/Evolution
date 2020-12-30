@@ -1084,13 +1084,12 @@ class Eating_Phase:
         return eating_base
 
     @staticmethod
-    def cooperation(animal: Animal, user_input):
+    def cooperation(animal: Animal, user_input=functions.input_function):
         """
         Realize cooperation function - to realize ring of cooperation properties
         (cooperation property works only with blue fish taking)
         assume: animal has cooperation relationships with other animals
         animal: Animal() instance
-        eating_base: int - number of red fish in eating base
         return: None
         """
         assert isinstance(animal, Animal), f'Eating_Phase.cooperation(animal):, animal is not Animal() instance'
