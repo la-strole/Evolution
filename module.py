@@ -1111,8 +1111,9 @@ class Eating_Phase:
                 return None
 
             else:
-                # only one animal has communication property
+
                 if len(cooperative_relationships) - len(took_blue_fish) == 1:
+                    # only one animal has communication property
                     animal_to_take = (set(cooperative_relationships) - set(took_blue_fish)).pop()
                 else:
                     # 2. ask player what animal should take  the red fish
@@ -1138,8 +1139,8 @@ class Eating_Phase:
 
                 took_blue_fish.append(animal_to_take)
 
-                if animal_to_take.get_communication():
-                    for item in animal_to_take.get_communication():
+                if animal_to_take.get_cooperation():
+                    for item in animal_to_take.get_cooperation():
                         if item.can_eat():
                             if item not in cooperative_relationships:
                                 if item == first_animal and len(took_blue_fish) == 1:
