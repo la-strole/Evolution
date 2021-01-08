@@ -329,7 +329,7 @@ class Animal:
 
         symbiosys_list = self.get_symbiosys()
         for symbiont in symbiosys_list:
-            if symbiont.get_hungry > 0:
+            if symbiont.get_hungry() > 0:
                 return True
         return False
 
@@ -1045,13 +1045,13 @@ class Eating_Phase:
                 else:
                     # 2. ask player what animal should take  the red fish
                     to_choose_list = [x for x in communicative_relationships if (x not in took_red_fish) and (
-                                      x.can_eat())]
+                        x.can_eat())]
                     for number, _ in enumerate(to_choose_list):
                         print(f'{number + 1}: = {_}')
 
                     choose = user_input([str(_ + 1) for _ in range(len(to_choose_list))],
-                                                      f'please, select number of animal from communication list to '
-                                                      f'take red fish from eating base: ')
+                                        f'please, select number of animal from communication list to '
+                                        f'take red fish from eating base: ')
 
                     animal_to_take = to_choose_list[int(choose) - 1]
 
@@ -1118,13 +1118,13 @@ class Eating_Phase:
                 else:
                     # 2. ask player what animal should take  the red fish
                     to_choose_list = [x for x in cooperative_relationships if (x not in took_blue_fish) and (
-                                      x.can_eat())]
+                        x.can_eat())]
                     for number, _ in enumerate(to_choose_list):
                         print(f'{number + 1}: = {_}')
 
                     choose = user_input([str(_ + 1) for _ in range(len(to_choose_list))],
-                                                      f'please, select number of animal from communication list to '
-                                                      f'take red fish from eating base: ')
+                                        f'please, select number of animal from communication list to '
+                                        f'take red fish from eating base: ')
 
                     animal_to_take = to_choose_list[int(choose) - 1]
 
@@ -1154,13 +1154,12 @@ class Eating_Phase:
 
         return None
 
-
-
     @staticmethod
     def take_red_fish(animal: Animal, eating_base, user_input=functions.input_function):
         """
         animal: Animal instance
         eating_base: int - self.eating base (red fish count)
+        user_input - function for test (functions.user_input() by default)
         take red fish from eating base (if it exist), reduce hungry
         make pair properties
         assume animal can eat

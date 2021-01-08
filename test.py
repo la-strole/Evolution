@@ -449,7 +449,6 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animals[1].get_hungry(), 0)
         self.assertEqual(animals[2].get_hungry(), 0)
 
-
         # third case tree in the ring and base case - animals[2] can't eat
         animals = [module.Animal() for x in range(3)]
         animals[0].add_cooperation(animals[1])
@@ -492,7 +491,6 @@ class TestEvolution(unittest.TestCase):
         animals[5].add_cooperation(animals[4])
         animals[5].add_cooperation(animals[0])
 
-
         def user_generator():
             answers = ['1', '4', '3', '3', '1']
             for answer in answers:
@@ -511,13 +509,30 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animals[3].hungry, 0)
         self.assertEqual(animals[4].hungry, 0)
         self.assertEqual(animals[5].hungry, 0)
-    
-    '''
-    
+
     def test_take_red_fish(self):
         """
         unit test for module.eating_phase.take_red_fish function
         """
+        # test assertions
+        # 1 animal is not Animal instance
+        animal = 1
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, 5)
+        # 2 type of eating base != int
+        animal = module.Animal()
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, '5')
+        # 3 eating base <= 0
+        animal = module.Animal()
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, 0)
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, -4)
+        # 4 animal can't eat
+        animal = module.Animal()
+        animal.add_symbiosys(module.Animal())
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, 2)
+
+        # if animal is hungry
+    # todo write test functions for little functions like can eat() etc
+        '''
         # emulation user input
         #-----------------------------------------------------------------------------
         def user_answers(*args):
