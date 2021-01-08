@@ -100,9 +100,9 @@ class TestEvolution(unittest.TestCase):
             self.assertEqual(len(cards), start_len_cards - num)
         print('module.take_cards(number: int, card_set: list)- OK')
 
-    def test_faza_razvitija(self):
+    def test_development_phase(self):
         """
-        unit test for faza_razvitija(players: list, number: int) function
+        unit test for module.development_phase(players: list, number: int) function
         """
 
         players_list = [module.Player('first_player'), module.Player('second_player')]
@@ -115,7 +115,7 @@ class TestEvolution(unittest.TestCase):
         for player in players_list:
             player.get_cards_hand().extend(hands)
         first_number = 0
-        razvitie = module.Faza_Razvitija(players_list, first_number)
+        razvitie = module.Development_Phase(players_list, first_number)
         """# if all players say pass (len(list_of_pass = len(players))
         razvitie.list_of_pass = players_list[:]
         razvitie.faza_rezvitija_function()
@@ -511,6 +511,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animals[5].hungry, 0)
 
     def test_take_red_fish(self):
+
         """
         unit test for module.eating_phase.take_red_fish function
         """
@@ -530,8 +531,34 @@ class TestEvolution(unittest.TestCase):
         animal.add_symbiosys(module.Animal())
         self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, 2)
 
-        # if animal is hungry
-    # todo write test functions for little functions like can eat() etc
+        # if animal is hungry, has free fat cards and it's symbionts are not hungry
+        animal = module.Animal()
+        symbiont = module.Animal()
+        symbiont.reduce_hungry()
+        animal.fat_cards_count = 1
+        animal.add_symbiosys(symbiont)
+
+        eating_base = module.Eating_Phase.take_red_fish(animal, 1)
+        self.assertEqual(eating_base, 0)
+        self.assertEqual(animal.get_hungry(), 0)
+        self.assertEqual(animal.get_is_full_fat(), 1)
+        self.assertEqual(animal.get_fat(), 0)
+
+        # if animal is not hungry, but has free at cards and it's symbionts are not hungry
+        animal = module.Animal()
+        symbiont = module.Animal()
+        symbiont.reduce_hungry()
+        animal.reduce_hungry()
+        animal.fat_cards_count = 1
+        animal.add_symbiosys(symbiont)
+
+        eating_base = module.Eating_Phase.take_red_fish(animal, 1)
+        self.assertEqual(eating_base, 0)
+        self.assertEqual(animal.get_hungry(), 0)
+        self.assertEqual(animal.get_is_full_fat(), 0)
+        self.assertEqual(animal.get_fat(), 1)
+
+
         '''
         # emulation user input
         #-----------------------------------------------------------------------------
@@ -705,6 +732,44 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(players[0].animals[0].fat, 0)
         self.assertEqual(players[0].animals[1].fat, 1)
         '''
+
+    def test_fat_to_blue_fish(self):
+        """
+        unit test for module.Eating_Phase.fat_to_blue_fish()
+        """
+        animal = module.Animal()
+
+        # test assertions
+        # if animal has not fat cards
+        self.assertRaises(AssertionError, module.Eating_Phase.fat_to_blue_fish, animal)
+        # if animal has fat cards but not hungry
+        animal.fat_cards_count = 1
+        animal.increase_fat()
+        animal.reduce_hungry()
+        self.assertRaises(AssertionError, module.Eating_Phase.fat_to_blue_fish, animal)
+
+        # if we try to reduce hungry to negative
+        animal = module.Animal()
+        animal.fat_cards_count = 1
+        animal.fat = 1
+
+        def user_input(*args):
+            return '2'
+
+        self.assertRaises(AssertionError, module.Eating_Phase.fat_to_blue_fish, animal, user_input)
+
+        # if everything is ok
+        animal = module.Animal()
+        animal.fat_cards_count = 1
+        animal.fat = 1
+
+        def user_input(*args):
+            return '1'
+
+        self.assertEqual(module.Eating_Phase.fat_to_blue_fish(animal, user_input), None)
+        self.assertEqual(animal.get_hungry(), 0)
+        self.assertEqual(animal.get_fat(), 0)
+        self.assertEqual(animal.get_is_full_fat(), 1)
 
 
 if __name__ == '__main__':

@@ -25,6 +25,20 @@ class Player:
     def __repr__(self):
         return f'{self.get_player_name()}'
 
+    @staticmethod
+    def set_player_name():
+        """
+        set player's name player.name
+        return: str(name)
+        """
+        while True:
+            try:
+                name = str(input("input Player's name: "))
+                break
+            except ValueError:
+                print("try to input another name")
+        return name
+
     def get_player_name(self):
         """
         return player's name
@@ -164,8 +178,8 @@ class Animal:
         animal_id = 0
         self.animal_id = animal_id + 1
         self.property = []
-        self.hungry = 1  # change to 1 0 - for test
-        self.fat = 0  # zhir
+        self.hungry = 1
+        self.fat = 0
         self.fat_cards_count = 0  # quantity of cards "zhir"
         self.swimming = False
         self.running = False
@@ -217,9 +231,13 @@ class Animal:
 
     def reduce_hungry(self, number=1):
         """
+        number: int
+        assume number <= animal.get_hungry()
         reduce hungry on number
         return None
         """
+        assert type(number) == int, f'Animal.reduce_hungry(): number is not integer'
+        assert number <= self.get_hungry(), f'Animal.reduce_hungry(): number > animal.get_hungry()'
         self.hungry -= number
 
     def get_fat(self):
@@ -231,22 +249,32 @@ class Animal:
     def increase_fat(self, number=1):
         """
         increase fat on number
+        number: int
+        assume fat <= fat cars count
         return: None
         """
+        assert type(number) == int, f'Animal.increase_fat(): number is not integer'
+        assert number <= self.get_is_full_fat(), f'Animal.increase_fat(): number > free fat_cards'
         self.fat += number
 
     def reduce_fat(self, number=1):
         """
         decreases fat on number
+        assume number: int
+        assume number < fat
         return: None
         """
+        assert type(number) == int, f'Animal.reduce_fat(): number is not integer'
+        assert number <= self.get_fat(), f'Animal.reduce_fat(): number > fat'
         self.fat -= number
 
     def get_is_full_fat(self):
         """
         return int - number of yellow (fat) fish animal can take
         """
-        return self.fat_cards_count - self.fat
+        not_full_fat = self.fat_cards_count - self.fat
+        assert not_full_fat >= 0, f'Animal.get_is_full_fat(): fat > fat_cards'
+        return not_full_fat
 
     def is_grazing(self):
         """
@@ -278,7 +306,7 @@ class Animal:
 
     def is_hibernate(self):
         """
-        return True if animal is in hibernation
+        return True if animal is in hibernation state
         else return False
         """
         if self.hibernation_active:
@@ -309,7 +337,7 @@ class Animal:
 
     def add_symbiosys(self, animal):
         """
-        animal: Animal
+        animal: Animal() instance
         add symbiont to current animal, append it to animal.symbiont list
         return: None
         """
@@ -322,7 +350,7 @@ class Animal:
         """
         return self.simbiosys
 
-    def are_hungry_symbiosys(self):
+    def exist_hungry_symbiosys(self):
         """
         return True if there are hungry symbionts (then animal can't eat), else return False
         """
@@ -335,8 +363,9 @@ class Animal:
 
     def add_communication(self, animal):
         """
-        animal: Animal
+        animal: Animal() instance
         add communicate to current animal, append it to animal.communication list
+        warning - it is dual property, but here we adds this property only to one animal!
         return: None
         """
         assert isinstance(animal, Animal), f'Animal.add_communication(): {animal} is not instance of Animal class'
@@ -350,7 +379,7 @@ class Animal:
 
     def add_cooperation(self, animal):
         """
-        animal: Animal
+        animal: Animal() instance
         add cooperate to current animal, append it to animal.symbiont list
         return: None
         """
@@ -366,14 +395,12 @@ class Animal:
     def can_eat(self):
         """
         Returns True if animal is hungry, or is free fat slots, and it's symbionts are not hungry,
-                     it is not in hibernation status
+                     and it is not in hibernation status
         else:: returns False
         """
-        if (self.get_hungry() > 0 or self.get_is_full_fat() > 0) and not self.is_hibernate():
-            if self.get_symbiosys():
-                for symbiont in self.get_symbiosys():
-                    if symbiont.get_hungry() > 0:
-                        return False
+        if (self.get_hungry() > 0 or self.get_is_full_fat() > 0) \
+                and not self.is_hibernate() \
+                and not self.exist_hungry_symbiosys():
             return True
         return False
 
@@ -424,24 +451,11 @@ class functions:
             print('error than input, please, try again')
 
     @staticmethod
-    def set_player_name():
-        """
-        set player's name
-        """
-        while True:
-            try:
-                name = str(input("input Player's name: "))
-                break
-            except ValueError:
-                print("try to input another name")
-        return name
-
-    @staticmethod
     def next_player(num: int, players: list):
         """Select next Player.
         num: int - index of current player in players list
         players: list - players list
-        return next player num or -1 if failure"""
+        return: int - next player num or -1 if failure"""
         assert type(num) == int, f'next_player({num},{players}): type of num ({type(num)}) is not int'
         assert type(players) == list, f'next_player({num},{players}): type of {players} is not list'
         assert 1 < len(players) <= 7, f'next_player({num},{players}): number of players ({len(players)}) ' \
@@ -458,7 +472,7 @@ class functions:
         """Take <number> of cards from <card_set> and return it and remove from <card_set>.
         number: int - number of cards to take from card_Set
         card_set: list - list of cards
-        return number of cards (list) from card set or -1 if failure
+        return: list -  number of cards (list) from card set or -1 if failure
         """
         assert type(number) == int, f'take_cards({number}, {card_set}): type of number ({type(number)} is not int'
         assert type(
@@ -491,9 +505,10 @@ class functions:
             except NameError:
                 print("name error! bad number of players, try again")
         for i in range(number_of_players):
-            result.append(Player(name=functions.set_player_name()))  # List of instances of Player class.
+            result.append(Player(name=Player.set_player_name()))  # List of instances of Player class.
         return result
 
+    # todo rewrite classmethod make property and make parasite to static methos of Animal class
     @classmethod
     def make_property(cls, player, players_list):
         """ Defines the property for Player's Animal players_list and active_num -
@@ -776,7 +791,7 @@ class functions:
         return 1
 
     @staticmethod
-    def are_hungry_animals(list_of_animals: list):
+    def exist_hungry_animals(list_of_animals: list):
         """
         list_of_animals: list of Animal() instances
         return True if there are hungry animals in this list, else return False
@@ -789,7 +804,7 @@ class functions:
         return False
 
     @staticmethod
-    def are_not_full_fat_animals(list_of_animals: list):
+    def exist_not_full_fat_animals(list_of_animals: list):
         """
         list_of_animals: list of Animal() instances
         return True if there are not full fat animals in this list, else return False
@@ -815,9 +830,9 @@ class functions:
         return False
 
 
-class Faza_Razvitija:
+class Development_Phase:
     """
-    faza razvitija
+    development phase
     players: list - list of instances Player
     number: int - number of first player
     """
@@ -943,7 +958,7 @@ class Define_Eating_Base_Phase:
 
     def get_food_count(self):
         """
-        return number of red fish
+        return int -  number of red fish
         """
         return self.red_fish
 
@@ -981,7 +996,7 @@ class Eating_Phase:
         player: Player instance
         change eating_base: int
         user_input - added to unit tst - to change user input in test.py
-        return new eating base
+        return: int - new eating base
         """
 
         number = player.get_grazing_count()
@@ -1012,7 +1027,7 @@ class Eating_Phase:
         animal: Animal() instance
         eating_base: int - number of red fish in eating base
         user_input - to test to emulate user input
-        return: new eating_base
+        return: int - new eating_base
         """
         assert type(eating_base) == int, f'Eating_Phase.communication(animal, eating base):, ' \
                                          f'eating_base is not integer'
@@ -1155,16 +1170,15 @@ class Eating_Phase:
         return None
 
     @staticmethod
-    def take_red_fish(animal: Animal, eating_base, user_input=functions.input_function):
+    def take_red_fish(animal: Animal, eating_base):
         """
         animal: Animal instance
         eating_base: int - self.eating base (red fish count)
-        user_input - function for test (functions.user_input() by default)
-        take red fish from eating base (if it exist), reduce hungry
+        take red fish from eating base (if it exist - else raise error), reduce hungry or increase fat
         make pair properties
         assume animal can eat
         assume that eating base is not emtpy
-        return new eating base
+        return int new eating base
         """
 
         assert isinstance(animal, Animal), f'Eating_phase.take_red_fish(): {animal} is no Animal instance'
@@ -1172,7 +1186,7 @@ class Eating_Phase:
         assert eating_base > 0, f'Eating_phase.take_red_fish(): {eating_base} <= 0'
         assert animal.can_eat(), f'Eating_phase.take_red_fish(): {animal} can not eat ' \
                                  f'(hungry={animal.get_hungry()}, free_Fat={animal.get_is_full_fat()},' \
-                                 f'hungry_symbiosys={animal.are_hungry_symbiosys()}))'
+                                 f'hungry_symbiosys={animal.exist_hungry_symbiosys()}))'
 
         eating_base -= 1
         # if animal is hungry
@@ -1208,8 +1222,11 @@ class Eating_Phase:
         number = user_input([str(x + 1) for x in range(animal.get_fat()) if x + 1 <= animal.get_hungry()],
                             f'choose number of fat to change to blue fish:')
 
+        assert int(number) <= animal.get_fat(), f'Eating_Phase.fat_to_blue_fish() - number > fat cards'
         animal.reduce_fat(int(number))
         animal.reduce_hungry(int(number))
+        assert animal.get_hungry() >= 0, f'Eating_Phase.fat_to_blue_fish() - hungry reduced to negative'
+        assert animal.get_fat() >= 0, f'Eating_Phase.fat_to_blue_fish() - fat reduced to negative'
         print(f'animal {animal} change {number} fat to blue cards: hungry={animal.get_hungry()}')
 
     @staticmethod
@@ -1519,7 +1536,7 @@ if __name__ == "__main__":
             players_list), f'main: len(deck) < len(players)*6. Not enough cards to make first hand'
         player.make_first_hand(deck)
     first_number_player = randint(0, len(players_list) - 1)
-    razvitie = Faza_Razvitija(players_list, first_number_player)
+    razvitie = Development_Phase(players_list, first_number_player)
     razvitie.faza_rezvitija_function()
     define_eating_base_phase = Define_Eating_Base_Phase(players_list)
     food = define_eating_base_phase.get_food_count()
