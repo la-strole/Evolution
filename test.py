@@ -188,9 +188,9 @@ class TestEvolution(unittest.TestCase):
         players_list = [Player(str(x)) for x in range(3)]
         player = players_list[0]
         player.get_player_animals().append(module.Animal())
-        player.get_player_animals()[0].get_animal_properties().append('pada')
+        player.get_player_animals()[0].add_single_animal_property('scavenger')
         self.assertEqual(functions_test.make_property(player, players_list), 0)
-        self.assertEqual(('hish',) in player.get_cards_hand(), True)
+        self.assertEqual(('carnivorous',) in player.get_cards_hand(), True)
 
     def test_init_Eating_Phase(self):
         """
@@ -234,7 +234,7 @@ class TestEvolution(unittest.TestCase):
 
         rand_animals = [module.Animal() for x in range(randint(1, 10))]
         for item in rand_animals:
-            item.grazing = True
+            item.add_single_animal_property('grazing')
         # if player.get_grazing_count == len(animals)
         player = module.Player()
         player.animals = rand_animals
@@ -262,7 +262,7 @@ class TestEvolution(unittest.TestCase):
         players = [module.Player() for x in range(5)]
         # add grazing animlas to Player[0]
         grazing_animal = module.Animal()
-        grazing_animal.grazing = True
+        grazing_animal.add_single_animal_property('grazing')
         for i in range(5):
             players[0].animals.append(grazing_animal)
         # instance of eating Phase class
@@ -286,31 +286,33 @@ class TestEvolution(unittest.TestCase):
         """
         unit test for module.communication()
         """
+        player = module.Player()
         # create animal
         animals = [module.Animal() for x in range(3)]
-
+        player.animals = animals
         # test assertions
         # ------------------------
         # eating bse <= 0
         eating_base = 0
-        self.assertRaises(AssertionError, module.Eating_Phase.communication, animals[0], eating_base)
+        self.assertRaises(AssertionError, module.Eating_Phase.communication, player, animals[0], eating_base)
         # animal has communication property
-        self.assertRaises(AssertionError, module.Eating_Phase.communication, animals[0], eating_base=4)
+        self.assertRaises(AssertionError, module.Eating_Phase.communication, player, animals[0], eating_base=4)
         # animal is no Animal intance
-        self.assertRaises(AssertionError, module.Eating_Phase.communication, 1, eating_base=4)
+        self.assertRaises(AssertionError, module.Eating_Phase.communication, player, 1, eating_base=4)
         # -------------------------
 
         # first case two animals
         animals[0].add_communication(animals[1])
         animals[1].add_communication(animals[0])
 
-        eating_base = module.Eating_Phase.communication(animals[0], eating_base=2)
+        eating_base = module.Eating_Phase.communication(player, animals[0], eating_base=2)
         self.assertEqual(eating_base, 1)
         self.assertEqual(animals[1].get_hungry(), 0)
         self.assertEqual(animals[0].get_hungry(), 1)
 
         # second case tree in the ring and base case - len(took_red_fish) == len(communication_relation)
         animals = [module.Animal() for x in range(3)]
+        player.animals = animals
         animals[0].add_communication(animals[1])
         animals[0].add_communication(animals[2])
         animals[1].add_communication(animals[0])
@@ -321,7 +323,7 @@ class TestEvolution(unittest.TestCase):
         def user_answers(*args):
             return '1'
 
-        eating_base = module.Eating_Phase.communication(animals[0], eating_base=3, user_input=user_answers)
+        eating_base = module.Eating_Phase.communication(player, animals[0], eating_base=3, user_input=user_answers)
         self.assertEqual(eating_base, 0)
         self.assertEqual(animals[0].get_hungry(), 0)
         self.assertEqual(animals[1].get_hungry(), 0)
@@ -329,6 +331,7 @@ class TestEvolution(unittest.TestCase):
 
         # third case tree in the ring and base case - eating base == 0
         animals = [module.Animal() for x in range(3)]
+        player.animals = animals
         animals[0].add_communication(animals[1])
         animals[0].add_communication(animals[2])
         animals[1].add_communication(animals[0])
@@ -339,14 +342,15 @@ class TestEvolution(unittest.TestCase):
         def user_answers(*args):
             return '1'
 
-        eating_base = module.Eating_Phase.communication(animals[0], eating_base=2, user_input=user_answers)
+        eating_base = module.Eating_Phase.communication(player, animals[0], eating_base=2, user_input=user_answers)
         self.assertEqual(eating_base, 0)
-        self.assertEqual(animals[0].hungry, 1)
-        self.assertEqual(animals[1].hungry, 0)
-        self.assertEqual(animals[2].hungry, 0)
+        self.assertEqual(animals[0].get_hungry(), 1)
+        self.assertEqual(animals[1].get_hungry(), 0)
+        self.assertEqual(animals[2].get_hungry(), 0)
 
         # forth case tree in the ring and base case - animals[2] can't eat
         animals = [module.Animal() for x in range(3)]
+        player.animals = animals
         animals[0].add_communication(animals[1])
         animals[0].add_communication(animals[2])
         animals[1].add_communication(animals[0])
@@ -359,14 +363,15 @@ class TestEvolution(unittest.TestCase):
         def user_answers(*args):
             return '1'
 
-        eating_base = module.Eating_Phase.communication(animals[0], eating_base=3, user_input=user_answers)
+        eating_base = module.Eating_Phase.communication(player, animals[0], eating_base=3, user_input=user_answers)
         self.assertEqual(eating_base, 2)
-        self.assertEqual(animals[0].hungry, 1)
-        self.assertEqual(animals[1].hungry, 0)
-        self.assertEqual(animals[2].hungry, 1)
+        self.assertEqual(animals[0].get_hungry(), 1)
+        self.assertEqual(animals[1].get_hungry(), 0)
+        self.assertEqual(animals[2].get_hungry(), 1)
 
         # fifth case six in the two rings
         animals = [module.Animal() for x in range(6)]
+        player.animals = animals
         id = 1
         for animal in animals:
             animal.animal_id = id
@@ -397,42 +402,44 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        eating_base = module.Eating_Phase.communication(animals[0], eating_base=6, user_input=user_input)
+        eating_base = module.Eating_Phase.communication(player, animals[0], eating_base=6, user_input=user_input)
         self.assertEqual(eating_base, 0)
-        self.assertEqual(animals[0].hungry, 0)
-        self.assertEqual(animals[1].hungry, 0)
-        self.assertEqual(animals[2].hungry, 0)
-        self.assertEqual(animals[3].hungry, 0)
-        self.assertEqual(animals[4].hungry, 0)
-        self.assertEqual(animals[5].hungry, 0)
+        self.assertEqual(animals[0].get_hungry(), 0)
+        self.assertEqual(animals[1].get_hungry(), 0)
+        self.assertEqual(animals[2].get_hungry(), 0)
+        self.assertEqual(animals[3].get_hungry(), 0)
+        self.assertEqual(animals[4].get_hungry(), 0)
+        self.assertEqual(animals[5].get_hungry(), 0)
 
     def test_cooperation(self):
         """
         unit test for module.cooperation()
         """
+        player = module.Player()
         # create animal
         animals = [module.Animal() for x in range(3)]
-
+        player.animals = animals
         # test assertions
         # ------------------------
 
         # animal has cooperation property
-        self.assertRaises(AssertionError, module.Eating_Phase.cooperation, animals[0])
+        self.assertRaises(AssertionError, module.Eating_Phase.cooperation, player, animals[0])
         # animal is no Animal intance
-        self.assertRaises(AssertionError, module.Eating_Phase.cooperation, 1)
+        self.assertRaises(AssertionError, module.Eating_Phase.cooperation, player, 1)
         # -------------------------
 
         # first case two animals
         animals[0].add_cooperation(animals[1])
         animals[1].add_cooperation(animals[0])
 
-        answer = module.Eating_Phase.cooperation(animals[0])
+        answer = module.Eating_Phase.cooperation(player, animals[0])
         self.assertEqual(answer, None)
         self.assertEqual(animals[1].get_hungry(), 0)
         self.assertEqual(animals[0].get_hungry(), 1)
 
         # second case tree in the ring and base case - len(took_blue_fish) == len(cooperation_relation)
         animals = [module.Animal() for _ in range(3)]
+        player.animals = animals
         animals[0].add_cooperation(animals[1])
         animals[0].add_cooperation(animals[2])
         animals[1].add_cooperation(animals[0])
@@ -443,7 +450,7 @@ class TestEvolution(unittest.TestCase):
         def user_answers(*args):
             return '1'
 
-        eating_base = module.Eating_Phase.cooperation(animals[0], user_input=user_answers)
+        eating_base = module.Eating_Phase.cooperation(player, animals[0], user_input=user_answers)
         self.assertEqual(eating_base, None)
         self.assertEqual(animals[0].get_hungry(), 0)
         self.assertEqual(animals[1].get_hungry(), 0)
@@ -451,6 +458,7 @@ class TestEvolution(unittest.TestCase):
 
         # third case tree in the ring and base case - animals[2] can't eat
         animals = [module.Animal() for x in range(3)]
+        player.animals = animals
         animals[0].add_cooperation(animals[1])
         animals[0].add_cooperation(animals[2])
         animals[1].add_cooperation(animals[0])
@@ -463,14 +471,15 @@ class TestEvolution(unittest.TestCase):
         def user_answers(*args):
             return '1'
 
-        eating_base = module.Eating_Phase.cooperation(animals[0], user_input=user_answers)
+        eating_base = module.Eating_Phase.cooperation(player, animals[0], user_input=user_answers)
         self.assertEqual(eating_base, None)
-        self.assertEqual(animals[0].hungry, 1)
-        self.assertEqual(animals[1].hungry, 0)
-        self.assertEqual(animals[2].hungry, 1)
+        self.assertEqual(animals[0].get_hungry(), 1)
+        self.assertEqual(animals[1].get_hungry(), 0)
+        self.assertEqual(animals[2].get_hungry(), 1)
 
         # fifth case six in the two rings
         animals = [module.Animal() for x in range(6)]
+        player.animals = animals
         id = 1
         for animal in animals:
             animal.animal_id = id
@@ -501,14 +510,14 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        eating_base = module.Eating_Phase.cooperation(animals[0], user_input=user_input)
+        eating_base = module.Eating_Phase.cooperation(player, animals[0], user_input=user_input)
         self.assertEqual(eating_base, None)
-        self.assertEqual(animals[0].hungry, 0)
-        self.assertEqual(animals[1].hungry, 0)
-        self.assertEqual(animals[2].hungry, 0)
-        self.assertEqual(animals[3].hungry, 0)
-        self.assertEqual(animals[4].hungry, 0)
-        self.assertEqual(animals[5].hungry, 0)
+        self.assertEqual(animals[0].get_hungry(), 0)
+        self.assertEqual(animals[1].get_hungry(), 0)
+        self.assertEqual(animals[2].get_hungry(), 0)
+        self.assertEqual(animals[3].get_hungry(), 0)
+        self.assertEqual(animals[4].get_hungry(), 0)
+        self.assertEqual(animals[5].get_hungry(), 0)
 
     def test_take_red_fish(self):
 
@@ -518,27 +527,33 @@ class TestEvolution(unittest.TestCase):
         # test assertions
         # 1 animal is not Animal instance
         animal = 1
-        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, 5)
+        player = module.Player()
+        player.animals.append(animal)
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, player, animal, 5)
         # 2 type of eating base != int
         animal = module.Animal()
-        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, '5')
+        player.animals.append(animal)
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, player, animal, '5')
         # 3 eating base <= 0
         animal = module.Animal()
-        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, 0)
-        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, -4)
+        player.animals.append(animal)
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, player, animal, 0)
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, player, animal, -4)
         # 4 animal can't eat
         animal = module.Animal()
+        player.animals.append(animal)
         animal.add_symbiosys(module.Animal())
-        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, animal, 2)
+        self.assertRaises(AssertionError, module.Eating_Phase.take_red_fish, player, animal, 2)
 
         # if animal is hungry, has free fat cards and it's symbionts are not hungry
         animal = module.Animal()
+        player.animals.append(animal)
         symbiont = module.Animal()
-        symbiont.reduce_hungry()
+        symbiont.increase_red_fish()
         animal.fat_cards_count = 1
         animal.add_symbiosys(symbiont)
 
-        eating_base = module.Eating_Phase.take_red_fish(animal, 1)
+        eating_base = module.Eating_Phase.take_red_fish(player, animal, 1)
         self.assertEqual(eating_base, 0)
         self.assertEqual(animal.get_hungry(), 0)
         self.assertEqual(animal.get_is_full_fat(), 1)
@@ -546,13 +561,14 @@ class TestEvolution(unittest.TestCase):
 
         # if animal is not hungry, but has free at cards and it's symbionts are not hungry
         animal = module.Animal()
+        player.animals.append(animal)
         symbiont = module.Animal()
-        symbiont.reduce_hungry()
-        animal.reduce_hungry()
+        symbiont.increase_red_fish()
+        animal.increase_red_fish()
         animal.fat_cards_count = 1
         animal.add_symbiosys(symbiont)
 
-        eating_base = module.Eating_Phase.take_red_fish(animal, 1)
+        eating_base = module.Eating_Phase.take_red_fish(player, animal, 1)
         self.assertEqual(eating_base, 0)
         self.assertEqual(animal.get_hungry(), 0)
         self.assertEqual(animal.get_is_full_fat(), 0)
@@ -745,7 +761,7 @@ class TestEvolution(unittest.TestCase):
         # if animal has fat cards but not hungry
         animal.fat_cards_count = 1
         animal.increase_fat()
-        animal.reduce_hungry()
+        animal.increase_red_fish()
         self.assertRaises(AssertionError, module.Eating_Phase.fat_to_blue_fish, animal)
 
         # if we try to reduce hungry to negative
