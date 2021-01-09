@@ -49,38 +49,22 @@ class Player:
         """
         return self.name
 
-    def get_cards_hand(self):
+    def get_handcards(self):
         """
         return cards_hand list
         """
-        return self.cards_hand
-
-    def set_cards_hand(self, cards: list):
-        """
-        set cards_hand list
-        """
-        assert type(cards) == list, f'Player.set_cards_hand({cards}: cards not a list)'
-        self.cards_hand = cards
-
-    def make_first_hand(self, card_set: list):
-        """take 6 random cards from card_set to each Player
-        players - instances of Player()
-        card set - deck"""
-        assert type(card_set) == list, f'Player.make_first_hand({card_set}: card_set not a list)'
-        assert len(card_set) >= 6, f'Player.make_first_hand({card_set}: not enough cards to make first 6 card hand)'
-        self.cards_hand = functions.take_cards(6, card_set)
-        return 1
+        return self.cards_hand.copy()
 
     def take_handcard(self):
         """Take one card from <Player>'s hand and return it (Player - active_player). or return -1 if failure """
-        if self.get_cards_hand():
+        if self.get_handcards():
             while 1:
                 # Return number of card from Player's hand.
                 try:
-                    print("your hand is:", self.get_cards_hand())
+                    print("your hand is:", self.get_handcards())
                     card_num = int(input("choose card's number")) - 1
-                    if 0 <= card_num < len(self.get_cards_hand()):
-                        card = self.get_cards_hand().pop(card_num)
+                    if 0 <= card_num < len(self.get_handcards()):
+                        card = self.get_handcards().pop(card_num)
                         return card
                     else:
                         print("try again")
@@ -91,23 +75,39 @@ class Player:
             print("this Player hasn't any cards!")
             return -1
 
+    def put_handcard(self, card):
+        """
+        add card to players hand
+        return None
+        """
+
+        self.cards_hand.append(card)
+
+    def make_first_hand(self, card_set: list):
+        """take 6 random cards from card_set to each Player
+        players - instances of Player()
+        card set - deck"""
+        assert type(card_set) == list, f'Player.make_first_hand({card_set}: card_set not a list)'
+        assert len(card_set) >= 6, f'Player.make_first_hand({card_set}: not enough cards to make first 6 card hand)'
+        self.cards_hand = functions.take_cards(6, card_set)
+        return 1
+
     def get_player_animals(self):
         """
-        reteun player's animals list
+        return player's animals list
         """
-        return self.animals
+        return self.animals.copy()
 
     def make_animal(self):
-        """ append animal to player.animals. return 1 ir -1 if error"""
+        """
+        append Animal() to player.animals.
+        return None
+        """
         print(f"Adding new Animal to you, {self.name}")
         self.animals.append(Animal(self.player_id))
-        try:
-            for number_animal, animal_instance in enumerate(self.animals):
-                print(f"Animal {number_animal + 1}:, {animal_instance.get_animal_properties()}")
-            return 1
-        except:
-            print("Player.make_animal(): exception error")
-            return -1
+
+        for number_animal, animal_instance in enumerate(self.get_player_animals()):
+            print(f"Animal {number_animal + 1}:, {animal_instance.get_animal_properties()}")
 
     def get_hungry_animals(self):
         """
@@ -153,16 +153,14 @@ class Animal:
         self.hibernation_active = False
         self.hibernation_possibility = False
         self.poisoned = False
-        self.parasite = 0  # count of parasites
         self.alive = True
 
     def __str__(self):
-        return f'id={self.animal_id}, {self.get_animal_properties()}, ' \
+        return f'id={self.get_animal_id()}, {self.get_animal_properties()}, ' \
                f'free fat={self.get_is_full_fat()}'
 
     def __repr__(self):
-        return f'id={self.animal_id}, {self.get_animal_properties()}, ' \
-               f'free fat={self.get_is_full_fat()}'
+        return f'id={self.animal_id}, free fat={self.get_is_full_fat()}, hungry={self.get_hungry()}'
 
     def get_animal_id(self):
         """
@@ -189,8 +187,8 @@ class Animal:
         assume property is property from deck
         return None
         """
-        assert property in ['high_body_weight', 'swimming', 'sharp_vision', 'burrowing', 'carnivorous',
-                            'hibernation_ability', 'tail_loss', 'mimicry',  'running', 'poisonous', 'grazing',
+        assert property in ['high_body_weight', 'swimming', 'sharp_vision', 'burrowing', 'carnivorous', 'parasite',
+                            'hibernation_ability', 'tail_loss', 'mimicry', 'running', 'poisonous', 'grazing',
                             'scavenger', 'camouflage', 'piracy'], f'Animal.add_single_animal_property(): ' \
                                                                   f'property is not from deck single properties'
 
@@ -216,13 +214,13 @@ class Animal:
         hungry = self.get_hungry()
         properties = []
         properties.extend(single_properties)
-        properties.append('\ncommunications:')
+        properties.append('communications:')
         properties.extend(list_of_communications)
-        properties.append('\ncooperations:')
+        properties.append('cooperations:')
         properties.extend(list_of_cooperations)
-        properties.append('\nsymbiosys')
+        properties.append('symbiosys')
         properties.extend(list_of_symbiosys)
-        properties.append(f'\nfat={fat_count}, hibernation state={hibernation_state}, poisoned={poisoned},'
+        properties.append(f'fat={fat_count}, hibernation state={hibernation_state}, poisoned={poisoned},'
                           f' hungry={hungry}')
 
         return properties
@@ -237,8 +235,8 @@ class Animal:
             hungry += 1
         if self.is_carnivorous():
             hungry += 1
-        if self.parasite:
-            hungry += 2 * self.parasite
+        if self.has_parasite():
+            hungry += 2
 
         return hungry - self.red_fish_count - self.blue_fish_count
 
@@ -277,6 +275,15 @@ class Animal:
         not_full_fat = self.fat_cards_count - self.fat
         assert not_full_fat >= 0, f'Animal.get_is_full_fat(): fat > fat_cards'
         return not_full_fat
+
+    def has_parasite(self):
+        """
+        return True if animal has parasite, else return False
+        """
+        if 'parasite' in self.get_single_animal_properties():
+            return True
+        else:
+            return False
 
     def is_tail_loss(self):
         """
@@ -580,7 +587,6 @@ class functions:
         """ Return set_cards -
         cards - set of cards,
         number_of_players = len(plyers_list)
-        parasite
         """
 
         cards = [("sharp_vision", "fat"), ("grazing", "fat"), ("parasite", "carnivorous"), ("parasite", "fat"),
@@ -678,7 +684,7 @@ class functions:
             result.append(Player(name=Player.set_player_name()))  # List of instances of Player class.
         return result
 
-    # todo rewrite classmethod make property and make parasite to static methos of Animal class
+    # todo rewrite classmethod make property and make parasite to static methos of development phase class
     @classmethod
     def make_property(cls, player, players_list):
         """ Defines the property for Player's Animal players_list and active_num -
@@ -725,7 +731,7 @@ class functions:
                     ret_card = cls.input_function(['y', 'n'], 'do you want to return your card \
                                          to your hand? y/n')
                     if ret_card == 'y':
-                        player.get_cards_hand().append(card)
+                        player.put_handcard(card)
                         return 0
                     else:
                         continue  # Test for single properies loop.
@@ -733,7 +739,7 @@ class functions:
                     print("Predator can't have scavenger property")
                     ret_card = cls.input_function(['y', 'n'], 'do you want to return your card to your hand? y/n')
                     if ret_card == 'y':
-                        player.get_cards_hand().append(card)
+                        player.put_handcard(card)
                         return 0
                     else:
                         continue  # Test for single properies loop.
@@ -741,7 +747,7 @@ class functions:
                     print("your Animal is scavenger - it can't be predator!")
                     ret_card = cls.input_function(['y', 'n'], 'do you want to return your card to your hand? y/n')
                     if ret_card == 'y':
-                        player.get_cards_hand().append(card)
+                        player.put_handcard(card)
                         return 0
                     else:
                         continue  # Test for single properties loop.
@@ -754,7 +760,7 @@ class functions:
             if functions.make_parasite(players_list, active_num):
                 return 1
             else:
-                player.get_cards_hand().append(card)
+                player.put_handcard(card)
                 return 0
         elif property_value == "fat":
             while 1:  # fat loop.
@@ -773,7 +779,7 @@ class functions:
             property_value = property_value.copy()
             if lenght_player_animals < 2:
                 print("Error - you can't apply this property because you have only one Animal")
-                player.get_cards_hand().append(card)
+                player.put_handcard(card)
                 return 0
             elif property_value == "cooperation":
                 for number, animal in enumerate(player.get_player_animals()):
@@ -791,7 +797,7 @@ class functions:
                             animal_2 = player.get_player_animals()[choice[1] - 1]
                             if animal_1 in animal_2.get_cooperation() or animal_2 in animal_1.get_cooperation():
                                 print("This animals had been already cooperators! try another card!")
-                                player.get_cards_hand().append(card)
+                                player.put_handcard(card)
                                 return 0
                             else:
                                 animal_1.add_cooperation(animal_2)
@@ -846,7 +852,7 @@ class functions:
                             animal_2 = player.get_player_animals()[choice[1] - 1]
                             if animal_1 in animal_2.get_communication() or animal_2 in animal_1.get_communication():
                                 print("This animals had been already communicative! try another card!")
-                                player.get_cards_hand().append(card)
+                                player.put_handcard(card)
                                 return 0
                             else:
                                 animal_1.add_communication(animal_2)
@@ -884,8 +890,8 @@ class functions:
                     while 1:  # Choose Animal loop.
                         animal = int(input("input number of Animal")) - 1
                         if 0 <= animal < len(players_list[player].get_player_animals()):
-                            if players_list[player].get_player_animals()[animal].parasite == 0:
-                                players_list[player].get_player_animals()[animal].parasite += 1
+                            if not players_list[player].get_player_animals()[animal].has_parasite():
+                                players_list[player].get_player_animals()[animal].add_single_animal_property('parasite')
                                 print(players_list[player].get_player_animals()[animal].get_animal_properties())
                                 break  # Choose Animal loop.
                             else:
@@ -968,14 +974,14 @@ class Development_Phase:
                 self.active_player = self.players[self.number]
                 continue  # Continue main loop with next active Player.
             else:  # If active Player don't say PASS.
-                if not self.active_player.get_cards_hand():
+                if not self.active_player.get_handcards():
                     # If Player hasn't cards in his hand - automatic PASS.
                     self.list_of_pass.append(self.number)
                     self.number = functions.next_player(self.number, self.players)
                     self.active_player = self.players[self.number]
                     continue  # Continue main loop with next active Player.
             print("active Player ", self.active_player.get_player_name(), "=" * 20, "\n")
-            print("Player's hand: ", self.active_player.get_cards_hand())
+            print("Player's hand: ", self.active_player.get_handcards())
             if self.active_player.get_player_animals():
                 for number, i in enumerate(self.active_player.get_player_animals()):
                     print(f'{number} Animal:', i.get_animal_properties())

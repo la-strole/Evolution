@@ -113,7 +113,7 @@ class TestEvolution(unittest.TestCase):
                  (["vzai"], "hish"), ("bols", "zhir"), ("bols", "hish")]
         hands = [("ostr", "zhir"), ("ostr", "zhir")]
         for player in players_list:
-            player.get_cards_hand().extend(hands)
+            player.cards_hand.extend(hands)
         first_number = 0
         razvitie = module.Development_Phase(players_list, first_number)
         """# if all players say pass (len(list_of_pass = len(players))
@@ -139,7 +139,7 @@ class TestEvolution(unittest.TestCase):
 
         class Player(module.Player):
             def take_handcard(self):
-                return 'hish',
+                return 'carnivorous',
 
         class functions_test(module.functions):
 
@@ -187,10 +187,10 @@ class TestEvolution(unittest.TestCase):
         clear_players(players_list)
         players_list = [Player(str(x)) for x in range(3)]
         player = players_list[0]
-        player.get_player_animals().append(module.Animal())
+        player.animals.append(module.Animal())
         player.get_player_animals()[0].add_single_animal_property('scavenger')
         self.assertEqual(functions_test.make_property(player, players_list), 0)
-        self.assertEqual(('carnivorous',) in player.get_cards_hand(), True)
+        self.assertEqual(('carnivorous',) in player.get_handcards(), True)
 
     def test_init_Eating_Phase(self):
         """
@@ -292,7 +292,7 @@ class TestEvolution(unittest.TestCase):
         player.animals = animals
         # test assertions
         # ------------------------
-        # eating bse <= 0
+        # eating base <= 0
         eating_base = 0
         self.assertRaises(AssertionError, module.Eating_Phase.communication, player, animals[0], eating_base)
         # animal has communication property
@@ -411,6 +411,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animals[4].get_hungry(), 0)
         self.assertEqual(animals[5].get_hungry(), 0)
 
+
     def test_cooperation(self):
         """
         unit test for module.cooperation()
@@ -519,6 +520,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animals[4].get_hungry(), 0)
         self.assertEqual(animals[5].get_hungry(), 0)
 
+    '''
     def test_take_red_fish(self):
 
         """
@@ -575,7 +577,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animal.get_fat(), 1)
 
 
-        '''
+       
         # emulation user input
         #-----------------------------------------------------------------------------
         def user_answers(*args):
@@ -609,8 +611,8 @@ class TestEvolution(unittest.TestCase):
         players[0].animals[0].hungry = 0
         # if animal is not hungry and has no free fat (look at text this animal is not hungry and is enough fat!
         # Choose another animal!) next animal is hungry
-        eating_phase.eating_base = 5
-        eating_phase.take_red_fish(players[0], user_input) # answers [0], [1]
+        # eating_phase.eating_base = 5
+        eating_phase.take_red_fish(players[0], user_input, 5) # answers [0], [1]
         self.assertEqual(players[0].animals[1].hungry, 0)
         self.assertEqual(players[0].animals[1].fat, 0)
         self.assertEqual(eating_phase.eating_base, 4)
@@ -747,7 +749,8 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(players[0].animals[1].hungry, 0)
         self.assertEqual(players[0].animals[0].fat, 0)
         self.assertEqual(players[0].animals[1].fat, 1)
-        '''
+        
+    '''
 
     def test_fat_to_blue_fish(self):
         """
@@ -786,6 +789,8 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animal.get_hungry(), 0)
         self.assertEqual(animal.get_fat(), 0)
         self.assertEqual(animal.get_is_full_fat(), 1)
+
+
 
 
 if __name__ == '__main__':
