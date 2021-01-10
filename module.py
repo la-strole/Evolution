@@ -3,7 +3,114 @@ Created on 15 10 2017
 
 @author: zhenya.aka.john@gmail.com
 """
-from random import shuffle, randint
+from random import shuffle, randint, choice
+
+
+class Functions:
+
+    @staticmethod
+    def input_function(alternatives, greeting: str):
+        """
+        alternatives: list - list of chars - what you expect from input
+        greeting: str - text to print in input
+        return lowercase user input from alternative
+        """
+        for char in alternatives:
+            assert type(
+                char) == str, f'input_function(alternatives, greeting: str): alternatives ({char}) not from strings'
+        assert type(greeting) == str, f'input_function(alternatives, greeting: str): greeting ({greeting})is not string'
+        assert len(alternatives) >= 1, f'input_function(alternatives, greeting: str): len(alternatives)<1 ' \
+                                       f'({len(alternatives)}'
+        while True:
+            result = input(greeting)
+            if result in alternatives:
+                return result.lower()
+            print('error than input, please, try again')
+
+    @staticmethod
+    def exist_animals_to_hunt(animal, player_list: list):
+        """
+        return True if there are animals which it can hunt
+        else: return False
+        animal: Animal() instance - carnivorous
+        player_list - list of Player() instances (to get animals)
+        assume animal can hunt
+        """
+
+        assert isinstance(animal, Animal), f'exist_animals_to_hunt(): animal is not Animal() instance'
+        assert animal.can_hunt(), f"exist_animals_to_hunt(): animal can't hunt!"
+        for player in player_list:
+            assert isinstance(player, Player), f'exist_animals_to_hunt(): {player} in player_list is not Player() ' \
+                                               f'instance'
+
+        for player in player_list:
+            for victim in player.get_player_animals():
+                if victim != animal:  # can not attack itself
+                    if animal.can_attack(victim, False):
+                        return True
+        return False
+
+
+class Players:
+    """
+    Players of evolution game
+    """
+
+    players_list = []
+    first_number_player = False
+
+    def __init__(self, user_input=Functions.input_function):
+        Players.make_players_list(user_input)
+        Players.first_number_player = Players.define_first_player(Players.get_player_list())
+
+    @staticmethod
+    def get_players_number():
+        """
+        return int - number of players
+        """
+        return len(Players.players_list)
+
+    @staticmethod
+    def make_players_list(user_input=Functions.input_function):
+        """
+        Make players list = [instances of Player class] by default min 2 max 8.
+        Return None
+        """
+
+        choose = user_input([str(x + 1) for x in range(1, 8)], 'number of players (2-8): ')
+        for i in range(int(choose)):
+            Players.players_list.append(Player(name=Player.set_player_name()))  # List of instances of Player class.
+
+    @staticmethod
+    def next_player(player):
+        """
+        Select next Player.
+        return: next player
+        """
+        assert isinstance(player, Player), f'player is not Player instance'
+
+        # find player in players list
+        number = Players.players_list.index(player)
+
+        next_number = (number + 1) % Players.get_players_number()
+
+        return Players.players_list[next_number]
+
+    @staticmethod
+    def get_player_list():
+        """
+        return copy of players_list
+        """
+        return Players.players_list.copy()
+
+    @staticmethod
+    def define_first_player(players_list):
+        """
+        return first player randomly from Players.players_list
+        """
+        first_player = choice(players_list)
+        print(f'first player is {first_player.get_player_name()}')
+        return first_player
 
 
 class Player:
@@ -55,25 +162,22 @@ class Player:
         """
         return self.cards_hand.copy()
 
-    def take_handcard(self):
-        """Take one card from <Player>'s hand and return it (Player - active_player). or return -1 if failure """
-        if self.get_handcards():
-            while 1:
-                # Return number of card from Player's hand.
-                try:
-                    print("your hand is:", self.get_handcards())
-                    card_num = int(input("choose card's number")) - 1
-                    if 0 <= card_num < len(self.get_handcards()):
-                        card = self.get_handcards().pop(card_num)
-                        return card
-                    else:
-                        print("try again")
-                except:
-                    print("error, try again")
-                    continue
-        else:
-            print("this Player hasn't any cards!")
-            return -1
+    def take_handcard(self, user_input=Functions.input_function):
+        """
+        Take one card from <Player>'s hand and !remove! it from handcards
+        return card
+        """
+        assert self.get_handcards()
+
+        print('choose your card from hand:')
+        for num, _ in enumerate(self.get_handcards()):
+            print(f'{num + 1} {_}')
+
+        card_num = user_input([(str(x + 1)) for x in range(len(self.get_handcards()))], 'select card number:')
+
+        card = self.cards_hand.pop(int(card_num) - 1)
+
+        return card
 
     def put_handcard(self, card):
         """
@@ -83,27 +187,40 @@ class Player:
 
         self.cards_hand.append(card)
 
-    def make_first_hand(self, card_set: list):
-        """take 6 random cards from card_set to each Player
-        players - instances of Player()
-        card set - deck"""
-        assert type(card_set) == list, f'Player.make_first_hand({card_set}: card_set not a list)'
-        assert len(card_set) >= 6, f'Player.make_first_hand({card_set}: not enough cards to make first 6 card hand)'
-        self.cards_hand = functions.take_cards(6, card_set)
-        return 1
-
     def get_player_animals(self):
         """
         return player's animals list
         """
         return self.animals.copy()
 
-    def make_animal(self):
+    @staticmethod
+    def get_player_animal(player, user_input):
+        """
+        player - Player instance
+        assume player has animals
+        user_input - function for test for test
+        return: animal from player
+        """
+
+        assert isinstance(player, Player), f'Player.get_player_animal(): player is not Player instance'
+        assert player.get_player_animals(), f'Player.get_player_animal(): player has not animals'
+        print(f'choose animal from player {player.get_player_name()}')
+
+        for number, animal in enumerate(player.get_player_animals()):
+            print(f'{number + 1} {animal.get_animal_properties()}')
+
+        choose = user_input([str(x + 1) for x in range(len(player.get_player_animals()))],
+                            'choose animal number')
+
+        return player.get_player_animals()[int(choose) - 1]
+
+    def make_animal(self, user_input=Functions.input_function):
         """
         append Animal() to player.animals.
         return None
         """
         print(f"Adding new Animal to you, {self.name}")
+
         self.animals.append(Animal(self.player_id))
 
         for number_animal, animal_instance in enumerate(self.get_player_animals()):
@@ -214,11 +331,12 @@ class Animal:
         hungry = self.get_hungry()
         properties = []
         properties.extend(single_properties)
+        properties.append(f'fat_cards={self.fat_cards_count}')
         properties.append('communications:')
         properties.extend(list_of_communications)
         properties.append('cooperations:')
         properties.extend(list_of_cooperations)
-        properties.append('symbiosys')
+        properties.append('symbiosys:')
         properties.extend(list_of_symbiosys)
         properties.append(f'fat={fat_count}, hibernation state={hibernation_state}, poisoned={poisoned},'
                           f' hungry={hungry}')
@@ -275,6 +393,12 @@ class Animal:
         not_full_fat = self.fat_cards_count - self.fat
         assert not_full_fat >= 0, f'Animal.get_is_full_fat(): fat > fat_cards'
         return not_full_fat
+
+    def add_fat_card(self):
+        """
+        add fat card and increase fat_Cards_count
+        """
+        self.fat_cards_count += 1
 
     def has_parasite(self):
         """
@@ -580,489 +704,440 @@ class Animal:
         return True
 
 
-class functions:
+class Deck:
+    """
+    deck of playing cards
+    """
+
+    cards = [("sharp_vision", "fat"), ("grazing", "fat"), ("parasite", "carnivorous"), ("parasite", "fat"),
+             ("burrowing", "fat"), ("cooperation", "carnivorous"), ("cooperation", "fat"),
+             ("poisonous", "carnivorous"),
+             ("camouflage", "fat"), ("hibernation_ability", "carnivorous"), ("mimicry",), ("symbiosys",),
+             ("scavenger",), ("piracy",), ("tail_loss",), ("running",), ("swimming",), ("swimming",),
+             ("communication", "carnivorous"), ("high_body_weight", "fat"),
+             ("high_body_weight", "carnivorous")]
+
+    def __init__(self, number_of_players: int):
+        self.playing_deck = self.make_deck(number_of_players)
 
     @staticmethod
-    def make_deck(number_of_players: int):
-        """ Return set_cards -
-        cards - set of cards,
-        number_of_players = len(plyers_list)
+    def get_cards():
         """
+        return copy of cards list
+        """
+        return Deck.cards.copy()
 
-        cards = [("sharp_vision", "fat"), ("grazing", "fat"), ("parasite", "carnivorous"), ("parasite", "fat"),
-                 ("burrowing", "fat"), ("cooperation", "carnivorous"), ("cooperation", "fat"),
-                 ("poisonous", "carnivorous"),
-                 ("camouflage", "fat"), ("hibernation_ability", "carnivorous"), ("mimicry",), ("symbiosys",),
-                 ("scavenger",), ("piracy",), ("tail_loss",), ("running",), ("swimming",), ("swimming",),
-                 ("communication", "carnivorous"), ("high_body_weight", "fat"), ("high_body_weight", "carnivorous")]
+    def make_deck(self, number_of_players: int):
+
+        """
+        Return set_cards -
+        number_of_players = len(plyers_list)
+        assume 2 <= number_of_players <= 8
+        """
+        assert type(number_of_players) == int, f'Deck:make_deck(): type of number of players is not int'
+        assert 2 <= number_of_players <= 8, f'Deck:make_deck(): {number_of_players} not 2 <= number_of_players <= 8'
+
         # Making set_cards from cards and shuffling it,
         # set twice 'set_cards' for 5 - 8 players.
         if number_of_players < 5:
-            set_cards = cards * 4
+            set_cards = self.cards * 4
         elif 5 <= number_of_players <= 8:
-            set_cards = cards * 8
+            set_cards = self.cards * 8
         else:
             print("looks like this is something wrong with number_players!")
             raise ValueError
         shuffle(set_cards)
         return set_cards
 
-    @staticmethod
-    def input_function(alternatives, greeting: str):
+    def take_deckcards(self, number=1):
         """
-        alternatives: list - list of chars - what you expect from input
-        greeting: str - text to print in input
-        return lowercase user input from alternative
-        """
-        for char in alternatives:
-            assert type(
-                char) == str, f'input_function(alternatives, greeting: str): alternatives ({char}) not from strings'
-        assert type(greeting) == str, f'input_function(alternatives, greeting: str): greeting ({greeting})is not string'
-        assert len(alternatives) >= 1, f'input_function(alternatives, greeting: str): len(alternatives)<1 ' \
-                                       f'({len(alternatives)}'
-        while True:
-            result = input(greeting)
-            if result in alternatives:
-                return result.lower()
-            print('error than input, please, try again')
-
-    @staticmethod
-    def next_player(num: int, players: list):
-        """Select next Player.
-        num: int - index of current player in players list
-        players: list - players list
-        return: int - next player num or -1 if failure"""
-        assert type(num) == int, f'next_player({num},{players}): type of num ({type(num)}) is not int'
-        assert type(players) == list, f'next_player({num},{players}): type of {players} is not list'
-        assert 1 < len(players) <= 7, f'next_player({num},{players}): number of players ({len(players)}) ' \
-                                      f'are not in range(2,7)'
-        assert 0 <= num <= len(players) - 1, f'next_player({num},{players}): num = {num} not in len(players) range'
-        try:
-            result = (num + 1) % len(players)
-            return result
-        except:
-            return -1
-
-    @staticmethod
-    def take_cards(number: int, card_set: list):
-        """Take <number> of cards from <card_set> and return it and remove from <card_set>.
-        number: int - number of cards to take from card_Set
-        card_set: list - list of cards
-        return: list -  number of cards (list) from card set or -1 if failure
-        """
-        assert type(number) == int, f'take_cards({number}, {card_set}): type of number ({type(number)} is not int'
-        assert type(
-            card_set) == list, f'take_cards({number}, {card_set}): type of card_set ({type(card_set)} is not list'
-        assert number > 0, f'take_cards({number}, {card_set}): number({number}) <= 0'
-        if number <= len(card_set):
-            try:
-                return [card_set.pop() for i in range(number)]
-            except IndexError:
-                print(f"take_cards({number}, {card_set}): number > card_set! end of cards!")
-                return -1
-        else:
-            print(f'take_cards({number}, {card_set}): error with number in take_cards function')
-            return -1
-
-    @staticmethod
-    def make_players_list():
-        """Make players list = [instances of Player class] by default min 2 max 8.
-        Return players_list: list  """
-        result = []
-        while True:
-            try:
-                number_of_players = int(input("input number of players (2...8)"))
-                if (number_of_players >= 8) or (number_of_players < 2):
-                    print("bad number, try again")
-                else:
-                    break
-            except ValueError:
-                print("value error! bad number of players, try again")
-            except NameError:
-                print("name error! bad number of players, try again")
-        for i in range(number_of_players):
-            result.append(Player(name=Player.set_player_name()))  # List of instances of Player class.
-        return result
-
-    # todo rewrite classmethod make property and make parasite to static methos of development phase class
-    @classmethod
-    def make_property(cls, player, players_list):
-        """ Defines the property for Player's Animal players_list and active_num -
-            for function make_parasite.
-        player: Player() - instance of Player class
-        players_list: list - list of instances of Player()
-        """
-        assert isinstance(player,
-                          Player), f'make_property(player, card, players_list): player is not instance of Player'
-        active_num = players_list.index(player)
-        card = player.take_handcard()
-
-        def print_player_animals(player):
-            assert isinstance(player, Player), f'print_player_animals(player): player is not instance of Player'
-            for number, animal in enumerate(player.get_player_animals()):
-                print(number + 1, ' ', animal.get_animal_properties())
-            return 1
-
-        # take property value from card
-        if len(card) > 1:
-            print("your card has more than one property ", card)
-            choice = cls.input_function(['1', '2'], 'your card has more than one property - choose 1/2')
-            if choice == '1':
-                property_value = card[:][0]
-            else:
-                property_value = card[:][1]
-        else:
-            property_value = card[:][0]  # If only one property on the card.
-        print("your property", property_value)
-
-        lenght_player_animals = len(player.get_player_animals())
-
-        if property_value not in ['communication', 'symbiosys', 'cooperation', "parasite", "fat"]:
-            # Property is single and not parasite, fat.
-            while 1:  # for single property.
-                print_player_animals(player)
-                choice = cls.input_function([str(animal_number + 1) for animal_number in
-                                             range(lenght_player_animals)],
-                                            'choose animals number to add property: ')
-                current_animal = player.get_player_animals()[int(choice) - 1]
-                if property_value in current_animal.get_single_animal_properties():
-                    # Not doubles.
-                    print("This Animal already has this property! choose another Animal!")
-                    ret_card = cls.input_function(['y', 'n'], 'do you want to return your card \
-                                         to your hand? y/n')
-                    if ret_card == 'y':
-                        player.put_handcard(card)
-                        return 0
-                    else:
-                        continue  # Test for single properies loop.
-                elif (property_value == "scavenger") and (current_animal.is_carnivorous()):
-                    print("Predator can't have scavenger property")
-                    ret_card = cls.input_function(['y', 'n'], 'do you want to return your card to your hand? y/n')
-                    if ret_card == 'y':
-                        player.put_handcard(card)
-                        return 0
-                    else:
-                        continue  # Test for single properies loop.
-                elif (property_value == "carnivorous") and (current_animal.is_scavenger()):
-                    print("your Animal is scavenger - it can't be predator!")
-                    ret_card = cls.input_function(['y', 'n'], 'do you want to return your card to your hand? y/n')
-                    if ret_card == 'y':
-                        player.put_handcard(card)
-                        return 0
-                    else:
-                        continue  # Test for single properties loop.
-                else:
-                    current_animal.add_single_animal_property(property_value)
-
-                    break  # Test for single properties loop.
-            return 1
-        elif property_value == "parasite":
-            if functions.make_parasite(players_list, active_num):
-                return 1
-            else:
-                player.put_handcard(card)
-                return 0
-        elif property_value == "fat":
-            while 1:  # fat loop.
-                print_player_animals(player)
-                choice = int(input("choose animal's number to add property: ")) - 1
-
-                if choice > lenght_player_animals - 1 or choice < 0:
-                    print("error with choice number - please try again!")
-                    continue  # fat loop.
-
-                current_animal = player.get_player_animals()[choice]
-                current_animal.fat_cards_count += 1
-                break  # fat loop.
-            return 1
-        else:  # If property is double.
-            property_value = property_value.copy()
-            if lenght_player_animals < 2:
-                print("Error - you can't apply this property because you have only one Animal")
-                player.put_handcard(card)
-                return 0
-            elif property_value == "cooperation":
-                for number, animal in enumerate(player.get_player_animals()):
-                    print(f'{number + 1}: {animal}')
-                while 1:  # Choose cooperation pair.
-                    try:
-                        choice = list(map(int, (input("choose pair of animals (example: 1,3)")).split(',')))
-                        if len(choice) != 2:
-                            print("you have to input a PAIR of numbers-animals (example: 1,2)")
-                            continue  # Choose cooperation loop.
-                        elif ((0 < choice[0] <= lenght_player_animals) and
-                              (0 < choice[1] <= lenght_player_animals) and
-                              (choice[0] != choice[1])):
-                            animal_1 = player.get_player_animals()[choice[0] - 1]
-                            animal_2 = player.get_player_animals()[choice[1] - 1]
-                            if animal_1 in animal_2.get_cooperation() or animal_2 in animal_1.get_cooperation():
-                                print("This animals had been already cooperators! try another card!")
-                                player.put_handcard(card)
-                                return 0
-                            else:
-                                animal_1.add_cooperation(animal_2)
-                                animal_2.add_cooperation(animal_1)
-                                print(
-                                    f'animal_1: {animal_1.get_cooperation()}\tanimal_2: {animal_2.get_cooperation()}')
-                                break  # Choose cooperation pair loop.
-                    except:
-                        print("exception choose pair animals! try again!")
-                        continue  # Choose cooperation pair loop.
-                return 1
-            elif property_value == "symbiosys":
-                for number, animal in enumerate(player.get_player_animals()):
-                    print(f'{number + 1}: {animal}')
-                while 1:  # Choose symbiosys pair loop
-                    try:
-                        choice = list(map(int, (input("choose pair of your animals animal/ "
-                                                      "symbiont (1,3):")).split(',')))
-                        if len(choice) != 2:
-                            print("you have to input a PAIR of numbers-animals (example: 1,2)")
-                            continue  # Choose symbiosys pair loop.
-                        elif ((0 < choice[0] <= lenght_player_animals) and
-                              (0 < choice[1] <= lenght_player_animals) and
-                              (choice[0] != choice[1])):
-                            animal_1 = player.get_player_animals()[choice[0] - 1]
-                            animal_2_symbiont = player.get_player_animals()[choice[1] - 1]
-                            if animal_2_symbiont in animal_1.get_symbiosys():
-                                print("This animals had been already symbiote! try another card!")
-                                player.cards_hand.append(card)
-                                return 0
-                            else:
-                                animal_1.add_symbiosys(animal_2_symbiont)
-                                print(f'animal_1: {animal_1.get_symbiosys()}')
-                                break  # Choose symbiosys pair loop.
-                    except:
-                        print("exception choosing simbiont/ not simbiont! try again!")
-                        continue  # Choose symbiosys pair loop.
-                return 1
-            elif property_value == "communication":
-                for number, animal in enumerate(player.get_player_animals()):
-                    print(f'{number + 1}: {animal}')
-                while 1:  # Choose communication pair loop.
-                    try:
-                        choice = list(map(int, (input("choose pair of your animals (1,3):")).split(',')))
-                        if len(choice) != 2:
-                            print("you have to input a PAIR of numbers-animals (example: 1,2)")
-                            continue  # Choose communication pair loop.
-                        elif ((0 < choice[0] <= lenght_player_animals) and
-                              (0 < choice[1] <= lenght_player_animals) and
-                              (choice[0] != choice[1])):
-                            animal_1 = player.get_player_animals()[choice[0] - 1]
-                            animal_2 = player.get_player_animals()[choice[1] - 1]
-                            if animal_1 in animal_2.get_communication() or animal_2 in animal_1.get_communication():
-                                print("This animals had been already communicative! try another card!")
-                                player.put_handcard(card)
-                                return 0
-                            else:
-                                animal_1.add_communication(animal_2)
-                                animal_2.add_communication(animal_1)
-                                print(f'animal_1: {animal_1.get_communication()}\t'
-                                      f'animal_2: {animal_2.get_communication()}')
-                                break  # Choose communication pair loop.
-                    except:
-                        print("exception choosing animals for communication! try again!")
-                        continue  # Choose communication pair loop.
-                return 1
-
-    @staticmethod
-    def make_parasite(players_list, active_num):
-        """ set parasite property to another player's animal
-        players: list - players list"""
-        assert type(players_list) == list, f'make_parasite({players_list}: list): players are not list'
-        assert len(players_list) > 0, f'make_parasite({players_list}: list): players list is empty'
-        for i in range(len(players_list)):
-            print(i + 1, " ", players_list[i].get_player_name(), '\n', "animals:\n")
-            for number, animal in enumerate(players_list[i].get_player_animals()):
-                print(f"Animal {number + 1} {animal.get_animal_properties()}")
-        print("this property you can set only to another Player's Animal")
-        while 1:  # Main loop.
-            try:
-                want_next_loop = 0
-                player = int(input("input number of Player")) - 1
-                if player == active_num:
-                    print("you can't set 'parasite' property to your own animals! try again!")
-                    continue  # Main loop.
-                elif player < 0 or player >= len(players_list):
-                    print("wrong number, please try again!")
-                    continue  # Main loop.
-                else:
-                    while 1:  # Choose Animal loop.
-                        animal = int(input("input number of Animal")) - 1
-                        if 0 <= animal < len(players_list[player].get_player_animals()):
-                            if not players_list[player].get_player_animals()[animal].has_parasite():
-                                players_list[player].get_player_animals()[animal].add_single_animal_property('parasite')
-                                print(players_list[player].get_player_animals()[animal].get_animal_properties())
-                                break  # Choose Animal loop.
-                            else:
-                                print("error - each Animal has only one parasite")
-                                ret_card = functions.input_function(['y', 'Y', 'n', 'N'], "do you want to return "
-                                                                                          "your card to your hand?"
-                                                                                          " y/n")
-                                if ret_card == 'y':
-                                    return 0
-                                elif ret_card == 'n':
-                                    want_next_loop = 1
-                            break  # Choose Animal loop.
-                        print("something wrong with animals number, try again!")
-                        continue  # Choose Animal loop.
-                    if want_next_loop == 1:
-                        # print("want_next_loop")# for test.py
-                        continue  # Main loop.
-                break  # Main loop.
-            except:
-                print("exception input number of players or Animal! try again")
-                continue  # Main loop.
-        return 1
-
-    @staticmethod
-    def exist_animals_to_hunt(animal: Animal, player_list: list):
-        """
-        return True if there are animals which it can hunt
-        else: return False
-        animal: Animal() instance - carnivorous
-        player_list - list of Player() instances (to get animals)
-        assume animal can hunt
+        takes <number> random cards from deck and returns them
+        number - int - number of cards to take from the deck
+        assume there are enough cards in deck to take
+        return list of cards from deck
         """
 
-        assert isinstance(animal, Animal), f'exist_animals_to_hunt(): animal is not Animal() instance'
-        assert animal.can_hunt(), f"exist_animals_to_hunt(): animal can't hunt!"
-        for player in player_list:
-            assert isinstance(player, Player), f'exist_animals_to_hunt(): {player} in player_list is not Player() ' \
-                                               f'instance'
+        assert type(number) == int, f'Deck.take_deckcards: ({number}: number not an integer)'
+        assert len(self.playing_deck) >= number, f'DEck.take_deckcards: ({deck}: not enough cards to take to card hand)'
 
-        for player in player_list:
-            for victim in player.get_player_animals():
-                if victim != animal:  # can not attack itself
-                    if animal.can_attack(victim, False):
-                        return True
-        return False
+        cards_to_return = []
+        for _ in range(number):
+            cards_to_return.append(self.playing_deck.pop())
+
+        return cards_to_return
+
+    def get_playing_deck(self):
+        """
+        return copy of playing deck
+        """
+        return self.playing_deck.copy()
 
 
 class Development_Phase:
     """
     development phase
-    players: list - list of instances Player
-    number: int - number of first player
     """
 
-    def __init__(self, players: list, number: int):
-        self.players = players
-        self.number = number
+    def __init__(self):
         self.list_of_pass = []
-        self.active_player = self.players[self.number]
-        self.test = False  # to print test information
-        assert type(players) == list, f'faza_razvitija(players, number): type(players) is {type(players)} not list'
-        assert type(number) == int, f'faza_razvitija(players, number): type(number) is {type(number)} not int'
-        assert number < len(players), f'faza_razvitija(players, number): number {number} > len(players) {len(players)}'
-        for item in players:
-            assert isinstance(item, Player), f'faza_razvitija(players, number): {item} from players is not instance of ' \
-                                             f'Player'
 
-    def test_print(self):
-        if self.test:
-            print(f'TEST:{self.active_player}')
+    @staticmethod
+    def make_single_property(player: Player, property: str, user_input=Functions.input_function):
+        """
+        add single property to animal properties
+        animal - Animal() instnce
+        assume property is not symbiosys, communication, cooperation, parasite, fat
+        return True if property not in animal properties, else return False
+        """
 
-    def development_phase_function(self):
-        while 1:
-            # Main loop.
-            if len(self.list_of_pass) == len(self.players):
-                print("All players said PASS")
-                break  # Exit from main loop.
-            elif self.number in self.list_of_pass:  # If active Player said PASS.
-                self.number = functions.next_player(self.number, self.players)
-                self.active_player = self.players[self.number]
-                continue  # Continue main loop with next active Player.
-            else:  # If active Player don't say PASS.
-                if not self.active_player.get_handcards():
-                    # If Player hasn't cards in his hand - automatic PASS.
-                    self.list_of_pass.append(self.number)
-                    self.number = functions.next_player(self.number, self.players)
-                    self.active_player = self.players[self.number]
-                    continue  # Continue main loop with next active Player.
-            print("active Player ", self.active_player.get_player_name(), "=" * 20, "\n")
-            print("Player's hand: ", self.active_player.get_handcards())
-            if self.active_player.get_player_animals():
-                for number, i in enumerate(self.active_player.get_player_animals()):
-                    print(f'{number} Animal:', i.get_animal_properties())
+        assert type(property) == str, f'Development_Phase.make_single_property(): property is not string'
+        assert isinstance(player, Player), f'Development_Phase.make_single_property(): player is not Player instance'
+
+        if not player.get_player_animals():
+            print('player has not animals')
+            return False
+
+        animal = player.get_player_animal(player, user_input)
+
+        if property in animal.get_single_animal_properties():
+            print('this animal already has this property')
+            return False
+        else:
+            animal.add_single_animal_property(property)
+            return True
+
+    @staticmethod
+    def make_symbiosys_property(player: Player, user_input=Functions.input_function):
+        """
+        add symionts (Animal() from plyer to animal.symbiosys list
+        player - Player() instance
+        assume player has more then 2 animals and they are not simbionts
+        return True if property not in animal properties, and we can add symbiont else return False
+        """
+
+        assert isinstance(player, Player), f'Development_Phase.make_symbiosys_property(): player is not Player instance'
+
+        assert len(player.get_player_animals()) >= 2, f'Development_Phase.make_symbiosys_property(): player has < 2 ' \
+                                                      f'animals'
+
+        if len(player.get_player_animals()) < 2:
+            print('player has less then 2 animals')
+            return False
+
+        # pick animal
+        print('choose animal')
+        animal = player.get_player_animal(player, user_input)
+
+        # pick symbiont
+        print('choose symbiont')
+        symbiont = player.get_player_animal(player, user_input)
+
+        if symbiont == animal:
+            print('you choose animal and symbiont for the same animal')
+            return False
+
+        elif symbiont in animal.get_symbiosys():
+            print('your symbiont already in animal symbiosys')
+            return False
+
+        else:
+            animal.add_symbiosys(symbiont)
+            return True
+
+    @staticmethod
+    def make_communication_property(player: Player, user_input=Functions.input_function):
+        """
+        add communication/cooperation (Animal() from player
+        player - Player() instance
+        assume player has more then 2 animals and they are not communication
+        return True if property not in animal properties, and we can add symbiont else return False
+        """
+
+        assert isinstance(player, Player), f'Development_Phase.make_comm_coop_property(): player is not Player instance'
+
+        if len(player.get_player_animals()) < 2:
+            print('player has less then 2 animals')
+            return False
+
+        # pick animal
+        print('choose animal')
+        animal1 = player.get_player_animal(player, user_input)
+
+        # pick communication/cooperation
+        print(f'choose communication animal')
+        animal2 = player.get_player_animal(player, user_input)
+
+        if animal2 == animal1:
+            print(f'you choose animal and communication animal for the same animal')
+            return False
+
+        elif animal2 in animal1.get_communication():
+            print('your animal already in another animal communications')
+            return False
+
+        elif animal1 in animal2.get_communication():
+            print('your animal already in another animal communications')
+            return False
+
+        else:
+            animal1.add_communication(animal2)
+            animal2.add_communication(animal1)
+            return True
+
+    @staticmethod
+    def make_cooperation_property(player: Player, user_input=Functions.input_function):
+        """
+        add communication/cooperation (Animal() from player
+        player - Player() instance
+        assume player has more then 2 animals and they are not communication
+        return True if property not in animal properties, and we can add symbiont else return False
+        """
+
+        assert isinstance(player, Player), f'Development_Phase.make_comm_coop_property(): player is not Player instance'
+
+        if len(player.get_player_animals()) < 2:
+            print('player has less then 2 animals')
+            return False
+
+        # pick animal
+        print('choose animal')
+        animal1 = player.get_player_animal(player, user_input)
+
+        # pick communication/cooperation
+        print(f'choose cooperation animal')
+        animal2 = player.get_player_animal(player, user_input)
+
+        if animal2 == animal1:
+            print(f'you choose animal and cooperation animal for the same animal')
+            return False
+
+        elif animal2 in animal1.get_cooperation():
+            print('your animal already in another animal cooperation')
+            return False
+
+        elif animal1 in animal2.get_cooperation():
+            print('your animal already in another animal cooperation')
+            return False
+
+        else:
+            animal1.add_cooperation(animal2)
+            animal2.add_cooperation(animal1)
+            return True
+
+    @staticmethod
+    def make_fat_property(player: Player, user_input=Functions.input_function):
+        """
+        add fat property to plyers animal
+        assume animal has free fat slots
+        assume player has animals
+        return True if can add afat or False if can not
+        """
+        assert isinstance(player, Player), f'Development_Phase.make_fat_property(): player is not Player instance'
+
+        if not player.get_player_animals():
+            print('player has not animals')
+            return False
+
+        animal = player.get_player_animal(player, user_input)
+        animal.add_fat_card()
+        return True
+
+    @staticmethod
+    def make_parasite_property(players_list: list, user_input=Functions.input_function):
+        """
+        add parasite property to animal from all players
+        players_list: list - list of Players()
+        assume that animal hos not parasite property
+        return True if success or False
+        """
+        assert type(players_list) == list, f'Development_Phase.make_parasite_property():' \
+                                           f'players_list is not list'
+        for player in players_list:
+            assert isinstance(player, Player), f'Development_Phase.make_parasite_property():' \
+                                               f'{player} is not Player instance'
+
+        # print players
+        for number, player in enumerate(players_list):
+            print(f'{number + 1} {player.get_player_name()}')
+
+        choose_player = user_input([str(x + 1) for x in range(len(players_list))], 'choose player: ')
+        player = players_list[int(choose_player) - 1]
+
+        if not player.get_player_animals():
+            print(f'this player ({player.get_player_name} has not animals')
+            return False
+
+        # print animals
+        print('animals:')
+        animal = player.get_player_animal(player, user_input)
+
+        if 'parasite' in animal.get_single_animal_properties():
+            print('This animal already has parasite')
+            return False
+        else:
+            animal.add_single_animal_property('parasite')
+            return True
+
+    @staticmethod
+    def get_property_from_card(card: tuple, user_input=Functions.input_function):
+        """
+        get string - property from card
+        assume card from Deck
+        return: str property
+        """
+
+        # if card with single property
+        if len(card) == 1:
+            property = card[0]
+
+        # if card with two properties
+        else:
+            print('your card has two properties:')
+            for number, _ in enumerate(card):
+                print(f'{number + 1} {_}')
+
+            choose = user_input(['1', '2'], 'Choose property number(1,2)')
+            property = card[int(choose) - 1]
+
+        print(f'your property is {property}')
+        return property
+
+    @staticmethod
+    def make_property(players_list, player: Player, card: tuple, user_input=Functions.input_function):
+        """
+        take property from card, try to put it on animal
+        card - card from player's hand
+        return True if can make this property, else return False
+        """
+        assert isinstance(player, Player), f'Development_Phase.make_parasite_property():' \
+                                           f'player is not Player instance'
+        assert card in Deck.get_cards(), f'Development_Phase.make_parasite_property():' \
+                                         f'{card} is not in cards of game'
+
+        property = Development_Phase.get_property_from_card(card, user_input)
+
+        if property == 'symbiosys':
+            result = Development_Phase.make_symbiosys_property(player, user_input)
+            if not result:
+                return False
+
+        elif property == 'communication':
+            result = Development_Phase.make_communication_property(player, user_input)
+            if not result:
+                return False
+
+        elif property == 'cooperation':
+            result = Development_Phase.make_cooperation_property(player, user_input)
+            if not result:
+                return False
+
+        elif property == 'fat':
+            result = Development_Phase.make_fat_property(player, user_input)
+            if not result:
+                return False
+
+        elif property == 'parasite':
+            result = Development_Phase.make_parasite_property(players_list, user_input)
+            if not result:
+                return False
+
+        else:
+            result = Development_Phase.make_single_property(player, property, user_input)
+            if not result:
+                return False
+
+        return True
+
+    def development_phase_function(self, user_input=Functions.input_function):
+        """
+        development plhase function - while all players not in list_of_pass
+        return None
+        """
+        player = Players.first_number_player
+
+        print('Development phase:')
+        while len(self.list_of_pass) != Players.get_players_number():
+
+            if player in self.list_of_pass:
+                player = Players.next_player(player)
+                continue
+
+            print('*' * 84)
+            print(f'turn of player {player.get_player_name()}')
+
+            # if player has not cards on his card_hand - automatically pass
+            if len(player.get_handcards()) == 0:
+                self.list_of_pass.append(player)
+                player = Players.next_player(player)
+                continue
+
+            # if player has animals
+            if player.get_player_animals():
+
+                # choose  say pass
+                choose = user_input(['y', 'Y', 'n', 'N'], 'Do you want to say pass?')
+
+                if choose == 'y':
+                    self.list_of_pass.append(player)
+                    player = Players.next_player(player)
+                    continue
+
+            # choose card from hand
+            card = player.take_handcard(user_input)
+
+            # if player has not animals yet
+            if not player.get_player_animals():
+                print('you have not animals yet')
+                choose = 'a'
+
             else:
-                print("you haven't animals yet")
-            while 1:  # Loop for unsuitable properties -
-                #  to possibility of returning card to deck.
-                # animal_id = 0
-                if self.active_player.get_player_animals():
-                    pass_phrase = functions.input_function(['Y', 'y', 'n', 'N'], "do you want to say Pass (y/n)")
-                    if pass_phrase == 'y':
-                        self.list_of_pass.append(self.number)
-                        break  # Exit from loop 'suitable'.
-                    while 1:  # Loop of choose Animal/property.
-                        flag_suit = 0
-                        choice = functions.input_function(['A', 'a', 'P', 'p', 'pass'], "do you want to make new Animal"
-                                                                                        " or new property or say pass? "
-                                                                                        "(a/p/pass)")
-                        if choice == 'a':
-                            self.active_player.take_handcard()
-                            self.active_player.make_animal()
-                            flag_suit = 1
-                            break  # Exit from loop of choose Animal/property.
-                        elif choice == 'p':
-                            # If you can set property to the Animal:
-                            flag_suit = functions.make_property(self.active_player, self.players)
-                            break  # Exit from loop of choose Animal/property.
-                        elif choice == 'pass':
-                            self.list_of_pass.append(self.number)
-                            flag_suit = 1
-                            break  # Exit from loop of choose Animal/property.
-                    if flag_suit == 1:
-                        break  # Exit from loop 'suitable'.
-                    else:
-                        continue  # Loop 'suitable'  return unsuitable card to
-                        #  hand in function make_property.
+                # choose what do you want - animal or property
+                choose = user_input(['a', 'A', 'p', 'P'], 'Do you want create animal (a) or property (p)?:')
 
-                else:  # If you don't have any animals.
-                    print("now you have to make your first Animal from your hand")
-                    self.test_print()
-                    self.active_player.take_handcard()
-                    self.test_print()
-                    self.active_player.make_animal()
-                    self.test_print()
-                    break  # Exit from loop 'suitable'.
-            self.number = functions.next_player(self.number, self.players)
-            self.active_player = self.players[self.number]
-            continue  # Loop 'mainloop'.
+            if choose == 'a':
+                player.make_animal()
+                player = Players.next_player(player)
+                continue
 
-        for i in range(len(self.players)):
-            print(self.players[i].get_player_name(), '\n', "animals:\n")
-            for item in range(len(self.players[i].get_player_animals())):
-                print("Animal", item + 1, self.players[i].get_player_animals()[item].get_animal_properties(),
-                      "hungry=", self.players[i].get_player_animals()[item].get_hungry())
-            print("=" * 20, "\n")
-        print("end of faza razvitije")
-        return 1
+            elif choose == 'p':
+
+                print('your animals are:')
+                for animal in player.get_player_animals():
+                    print(animal.get_animal_properties())
+
+                result = Development_Phase.make_property(Players.get_player_list(), player, card, user_input)
+
+                if result:
+                    player = Players.next_player(player)
+                    continue
+
+                else:
+                    print('can not realize this property - please choose another')
+                    player.put_handcard(card)
+                    continue
+
+        print('End of development phase')
 
 
 class Define_Eating_Base_Phase:
 
-    def __init__(self, players: list):
-        assert type(players) == list
-        for player in players:
-            assert isinstance(player, Player)
-        length_player_list = len(players)
-        assert 2 <= length_player_list <= 8, f'Define_Eating_Base_Phase.__init__(): length of players error ' \
-                                             f'(2 <= {length_player_list} <= 8)'
-        if length_player_list == 2:
+    def __init__(self, players_number):
+
+        assert 2 <= players_number < 8
+
+        if players_number == 2:
             self.red_fish = randint(1, 6) + 2
-        elif length_player_list == 3:
+        elif players_number == 3:
             self.red_fish = randint(1, 6) + randint(1, 6)
-        elif length_player_list == 4:
+        elif players_number == 4:
             self.red_fish = randint(1, 6) + randint(1, 6) + 2
-        elif length_player_list == 5:
+        elif players_number == 5:
             self.red_fish = randint(1, 6) + randint(1, 6) + randint(1, 6) + 2
-        elif length_player_list == 6:
+        elif players_number == 6:
             self.red_fish = randint(1, 6) + randint(1, 6) + randint(1, 6) + 4
-        elif length_player_list == 7:
+        elif players_number == 7:
             self.red_fish = randint(1, 6) + randint(1, 6) + randint(1, 6) + randint(1, 6) + 2
-        elif length_player_list == 8:
+        elif players_number == 8:
             self.red_fish = randint(1, 6) + randint(1, 6) + randint(1, 6) + randint(1, 6) + 4
 
     def get_food_count(self):
@@ -1080,7 +1155,7 @@ class Define_Eating_Base_Phase:
 
 class Eating_Phase:
 
-    def __init__(self, players: list, first_number_player: int, eating_base: int):
+    def __init__(self, players: list, first_number_player: Player, eating_base: int):
         """
         players: list - list of Players instances
         first_number_player: int - number of first player (from main)
@@ -1090,17 +1165,16 @@ class Eating_Phase:
         assert 1 < len(players) <= 8, f'Eating_Phase.__init__(): len of players not 1 < ({len(players)} <= 8)'
         for player in players:
             assert isinstance(player, Player), f'Eating_Phase.__init__(): {player} not instance of Player class'
-        assert type(first_number_player) == int, f'Eating_Phase.__init__(): {first_number_player} not integer'
-        assert 0 <= first_number_player <= len(players) - 1, f'Eating_Phase.__init__(): not 0 <= {first_number_player}' \
-                                                             f'<= len(players_list'
+        assert isinstance(first_number_player, Player)
         assert type(eating_base) == int, f'Eating_Phase.__init__(): {eating_base} not integer'
         assert eating_base >= 0, f'Eating_Phase.__init__(): {eating_base} < 0'
+
         self.players = players
         self.first_player = first_number_player
         self.eating_base = eating_base
 
     @staticmethod
-    def grazing_function(player: Player, eating_base: int, user_input=functions.input_function):
+    def grazing_function(player: Player, eating_base: int, user_input=Functions.input_function):
         """
         player: Player instance
         change eating_base: int
@@ -1127,7 +1201,7 @@ class Eating_Phase:
         return eating_base
 
     @staticmethod
-    def communication(player: Player, animal: Animal, eating_base: int, user_input=functions.input_function):
+    def communication(player: Player, animal: Animal, eating_base: int, user_input=Functions.input_function):
         """
         Realize communication function - to realize ring of communication properties
         (communication property works only with red fish taking)
@@ -1214,7 +1288,7 @@ class Eating_Phase:
         return eating_base
 
     @staticmethod
-    def cooperation(player: Player, animal: Animal, user_input=functions.input_function):
+    def cooperation(player: Player, animal: Animal, user_input=Functions.input_function):
         """
         Realize cooperation function - to realize ring of cooperation properties
         (cooperation property works only with blue fish taking)
@@ -1357,7 +1431,7 @@ class Eating_Phase:
             Eating_Phase.cooperation(player, animal)
 
     @staticmethod
-    def fat_to_blue_fish(animal: Animal, user_input=functions.input_function):
+    def fat_to_blue_fish(animal: Animal, user_input=Functions.input_function):
         """
         change fat cards to blue fish cards, decrease hungry
         animal: Animal instance
@@ -1399,7 +1473,7 @@ class Eating_Phase:
         animal.hibernation_possibility_False()
 
     @staticmethod
-    def choose_animal_to_attack(animal: Animal, player_list: list, user_input=functions.input_function):
+    def choose_animal_to_attack(animal: Animal, player_list: list, user_input=Functions.input_function):
         """
         choose animal to attack in hunting process
         animal - Animal() instance - carnivorous
@@ -1414,7 +1488,7 @@ class Eating_Phase:
             assert isinstance(player, Player), f'Eating_Phase.choose_animal_to_attack(): {player} is not Player() ' \
                                                f'instnse'
         assert animal.can_hunt(), f'Eating_Phase.choose_animal_to_attack(): animal can not hunt'
-        assert functions.exist_animals_to_hunt(animal, player_list), f'Eating_Phase.choose_animal_to_attack(): ' \
+        assert Functions.exist_animals_to_hunt(animal, player_list), f'Eating_Phase.choose_animal_to_attack(): ' \
                                                                      f'there are not animals to attack'
 
         # print players and their animals
@@ -1490,7 +1564,7 @@ class Eating_Phase:
         for player in player_list:
             assert isinstance(player, Player), f'Eating_Phase.hunting(): {player} is no Player() instance'
         assert animal.can_hunt(), f'EatingPhase.hunting(): animal can not hunt'
-        assert functions.exist_animals_to_hunt(animal, player_list), f'EatingPhase.hunting(): there are not animals ' \
+        assert Functions.exist_animals_to_hunt(animal, player_list), f'EatingPhase.hunting(): there are not animals ' \
                                                                      f'to hunt'
 
 
@@ -1758,17 +1832,15 @@ def phase_eating(players, first_player_number, red_fish_count):
 
 if __name__ == "__main__":
 
-    players_list = functions.make_players_list()
-    # players_list - list of instances of class "Player"
-    deck = functions.make_deck(len(players_list))
-    for player in players_list:
-        assert isinstance(player, Player), f'main: player {player} is not instance of Player class'
-        assert len(deck) >= 6 * len(
-            players_list), f'main: len(deck) < len(players)*6. Not enough cards to make first hand'
-        player.make_first_hand(deck)
-    first_number_player = randint(0, len(players_list) - 1)
-    razvitie = Development_Phase(players_list, first_number_player)
+    players = Players()
+    deck = Deck(players.get_players_number())
+
+    for player in players.get_player_list():
+        for _ in range(6):
+            player.put_handcard(deck.take_deckcards()[0])
+
+    razvitie = Development_Phase()
     razvitie.development_phase_function()
-    define_eating_base_phase = Define_Eating_Base_Phase(players_list)
+    define_eating_base_phase = Define_Eating_Base_Phase(players.get_players_number())
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())

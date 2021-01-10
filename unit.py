@@ -10,7 +10,7 @@ import module
 def test_next_player():
     """Select next Player.  """
     line = [-1, 8, 'a', chr(1099), 1, 4, 0]
-    result = list(map(module.functions.next_player, line))
+    result = list(map(module.Functions.next_player, line))
     return result
 
 
