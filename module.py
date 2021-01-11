@@ -30,9 +30,9 @@ class Functions:
     @staticmethod
     def exist_animals_to_hunt(animal, player_list: list):
         """
-        return True if there are animals which it can hunt
+        return True if there are animals which <animal> can hunt
         else: return False
-        animal: Animal() instance - carnivorous
+        assume animal: Animal() instance - carnivorous
         player_list - list of Player() instances (to get animals)
         assume animal can hunt
         """
@@ -60,8 +60,9 @@ class Players:
     first_number_player = False
 
     def __init__(self, user_input=Functions.input_function):
-        Players.make_players_list(user_input)
-        Players.first_number_player = Players.define_first_player(Players.get_player_list())
+        Players.players_list = []
+        self.make_players_list(user_input)
+        Players.first_number_player = self.define_first_player(Players.get_player_list())
 
     @staticmethod
     def get_players_number():
@@ -70,16 +71,16 @@ class Players:
         """
         return len(Players.players_list)
 
-    @staticmethod
-    def make_players_list(user_input=Functions.input_function):
+    def make_players_list(self, user_input=Functions.input_function):
         """
         Make players list = [instances of Player class] by default min 2 max 8.
         Return None
         """
 
         choose = user_input([str(x + 1) for x in range(1, 8)], 'number of players (2-8): ')
+        assert 2 <= int(choose) <= 8
         for i in range(int(choose)):
-            Players.players_list.append(Player(name=Player.set_player_name()))  # List of instances of Player class.
+            Players.players_list.append(Player())  # List of instances of Player class.
 
     @staticmethod
     def next_player(player):
@@ -103,8 +104,7 @@ class Players:
         """
         return Players.players_list.copy()
 
-    @staticmethod
-    def define_first_player(players_list):
+    def define_first_player(self, players_list):
         """
         return first player randomly from Players.players_list
         """
@@ -117,12 +117,12 @@ class Player:
     """ Player container of animals. """
     player_id = 0
 
-    def __init__(self, name='default name'):
+    def __init__(self):
         self.cards_hand = []
         self.animals = []  # list of animals = amimal()
-        self.player_id = Player.player_id + 1
+        self.player_id = Player.player_id
+        self.name = Player.player_id  # by default
         Player.player_id += 1
-        self.name = name
 
     def __str__(self):
         return f'Player {self.name}\ncard_hand = {self.cards_hand}\nanimals = {self.animals}\n'
@@ -136,11 +136,10 @@ class Player:
         """
         return self.player_id
 
-    @staticmethod
-    def set_player_name():
+    def set_player_name(self):
         """
         set player's name player.name
-        return: str(name)
+        return: None
         """
         while True:
             try:
@@ -148,7 +147,7 @@ class Player:
                 break
             except ValueError:
                 print("try to input another name")
-        return name
+        self.name = name
 
     def get_player_name(self):
         """
@@ -184,7 +183,7 @@ class Player:
         add card to players hand
         return None
         """
-
+        assert card in Deck.get_cards()
         self.cards_hand.append(card)
 
     def get_player_animals(self):
@@ -194,7 +193,7 @@ class Player:
         return self.animals.copy()
 
     @staticmethod
-    def get_player_animal(player, user_input):
+    def get_player_animal(player, user_input=Functions.input_function):
         """
         player - Player instance
         assume player has animals
@@ -214,7 +213,7 @@ class Player:
 
         return player.get_player_animals()[int(choose) - 1]
 
-    def make_animal(self, user_input=Functions.input_function):
+    def make_animal(self):
         """
         append Animal() to player.animals.
         return None
@@ -345,7 +344,7 @@ class Animal:
 
     def get_hungry(self):
         """
-        return how hungry is animal
+        return how hungry is animal: int
         """
         # return self.hungry
         hungry = 1
@@ -356,7 +355,10 @@ class Animal:
         if self.has_parasite():
             hungry += 2
 
-        return hungry - self.red_fish_count - self.blue_fish_count
+        result = hungry - self.red_fish_count - self.blue_fish_count
+        assert result > 0
+
+        return result
 
     def get_fat(self):
         """
@@ -397,6 +399,7 @@ class Animal:
     def add_fat_card(self):
         """
         add fat card and increase fat_Cards_count
+        return None
         """
         self.fat_cards_count += 1
 
@@ -775,11 +778,12 @@ class Deck:
 
 class Development_Phase:
     """
-    development phase
+    development phase take players list and first player from Players class
     """
 
-    def __init__(self):
+    def __init__(self, user_input=Functions.input_function):
         self.list_of_pass = []
+        self.development_phase_function(user_input)
 
     @staticmethod
     def make_single_property(player: Player, property: str, user_input=Functions.input_function):
@@ -817,19 +821,17 @@ class Development_Phase:
 
         assert isinstance(player, Player), f'Development_Phase.make_symbiosys_property(): player is not Player instance'
 
-        assert len(player.get_player_animals()) >= 2, f'Development_Phase.make_symbiosys_property(): player has < 2 ' \
-                                                      f'animals'
 
         if len(player.get_player_animals()) < 2:
             print('player has less then 2 animals')
             return False
 
         # pick animal
-        print('choose animal')
+        print('choose animal:')
         animal = player.get_player_animal(player, user_input)
 
         # pick symbiont
-        print('choose symbiont')
+        print('choose symbiont:')
         symbiont = player.get_player_animal(player, user_input)
 
         if symbiont == animal:
@@ -968,7 +970,7 @@ class Development_Phase:
             return False
 
         # print animals
-        print('animals:')
+        print('animals to give parasite:')
         animal = player.get_player_animal(player, user_input)
 
         if 'parasite' in animal.get_single_animal_properties():
@@ -1009,8 +1011,12 @@ class Development_Phase:
         card - card from player's hand
         return True if can make this property, else return False
         """
+        assert type(players_list) == list
+        for _ in players_list:
+            assert isinstance(_, Player)
         assert isinstance(player, Player), f'Development_Phase.make_parasite_property():' \
                                            f'player is not Player instance'
+        assert player in players_list
         assert card in Deck.get_cards(), f'Development_Phase.make_parasite_property():' \
                                          f'{card} is not in cards of game'
 
@@ -1836,11 +1842,11 @@ if __name__ == "__main__":
     deck = Deck(players.get_players_number())
 
     for player in players.get_player_list():
+        player.set_player_name()
         for _ in range(6):
             player.put_handcard(deck.take_deckcards()[0])
 
-    razvitie = Development_Phase()
-    razvitie.development_phase_function()
+    development_phase = Development_Phase()
     define_eating_base_phase = Define_Eating_Base_Phase(players.get_players_number())
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())

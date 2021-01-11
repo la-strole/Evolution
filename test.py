@@ -1,161 +1,235 @@
 import module
 import unittest
 from unittest.mock import patch
-from random import randint
+from random import randint, sample
 
 
 class TestEvolution(unittest.TestCase):
 
     @staticmethod
-    def user_input_generator(chooses: list):
+    def make_players_with_animals(num_p, num_a):
         """
-        emulate user input - generator with results from list chooses
-        chooses: list - list of str values to user input
+        make players list with aniamls
+        return Players instance
         """
-        assert type(chooses) == list, f'Test.Evolution.user_input_generator(): chooses is no list'
-        for item in chooses:
-            assert type(item) == str, f'Test.Evolution.user_input_generator(): not all chooses items are str'
 
-        for item in chooses:
-            yield item
+        def user_input(*arg):
+            return str(num_p)
 
-    @staticmethod
-    def user_input_emulator(*ars, chooses):
+        players = module.Players(user_input)
+
+        for player in players.get_player_list():
+            for _ in range(num_a):
+                player.make_animal()
+
+        return players
+
+    def test_Functions_exist_animals_to_hunt(self):
         """
-        chooses: list - list of str values to user input
-        returns next() of user_input_generator
+        unit test for Functions_exist_animals_to_hunt()
         """
-        assert type(chooses) == list, f'Test.Evolution.user_input_emulator(): chooses is no list'
-        for item in chooses:
-            assert type(item) == str, f'Test.Evolution.user_input_emulator(): not all chooses items are str'
-        f = TestEvolution.user_input_generator(chooses)
-        return next(f)
 
-    def test_next_player(self):
-        """ unit test for module.next_player(num: int, players: list)"""
-        # type(num) == int
-        num_test_cases_not_int = ['1', '', [1], (1,), {1: 1}]
-        for test_case in num_test_cases_not_int:
-            self.assertRaises(AssertionError, module.Functions.next_player, test_case, [1, 2, 3])
-        # type(players) == list
-        players_test_cases_not_list = ['1', '', (1,), {1: 1}]
-        for test_case in players_test_cases_not_list:
-            self.assertRaises(AssertionError, module.Functions.next_player, 1, test_case)
-        # 1 < len(plyesrs) <= 7
-        players_test_case = [-1000000000, -1, 0, 1, 8, 1000000000]
-        for test_case in players_test_case:
-            self.assertRaises(AssertionError, module.Functions.next_player, 1, test_case)
-        # 0 <= num <= len(players)
-        players_test_case = [1, 2, 3]  # relevant
-        num_test_cases = [-100000000000, -1, 4, 100000000000]
-        for test_case in num_test_cases:
-            self.assertRaises(AssertionError, module.Functions.next_player, test_case, players_test_case)
-        # num = 0
-        self.assertEqual(module.Functions.next_player(0, [1, 2, 3]), 1)
-        # num = len(players) - 1
-        self.assertEqual(module.Functions.next_player(2, [1, 2, 3]), 0)
-        # relevant test
-        for i in range(10):
-            players = [[1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5, 6, 7]]
-            num_variants = [randint(0, 1), randint(0, 3), randint(0, 6)]
-            result = map(module.Functions.next_player, num_variants, players)
-            answer_matrix = [(n + 1) % len(p) for n, p in zip(num_variants, players)]
-            # print(answer_matrix)
-            for a, r in zip(answer_matrix, result):
-                self.assertEqual(r, a)
-        print('module.next_player(num: int, players: list) - OK')
+        players = TestEvolution.make_players_with_animals(3, 2)
 
+        # make carnivorous 1 aniaml of 1 player
+        player1 = players.get_player_list()[0]
+        carnivorous = player1.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+
+        # test if it can hunt - expect True
+        self.assertEqual(module.Functions.exist_animals_to_hunt(carnivorous, players.get_player_list()), True)
+
+        # test if 2 animal of 1 player is high_body_weght -> we need to check animal from 2 player
+        animal1_2 = player1.get_player_animals()[1]
+        animal1_2.add_single_animal_property('high_body_weight')
+        self.assertEqual(module.Functions.exist_animals_to_hunt(carnivorous, players.get_player_list()), True)
+
+        # test if false
+        for player in players.get_player_list():
+            for animal in player.get_player_animals():
+                animal.add_single_animal_property('camouflage')
+        self.assertEqual(module.Functions.exist_animals_to_hunt(carnivorous, players.get_player_list()), False)
+
+    def test_class_Players(self):
+        """
+        unit test for Players init function
+        """
+        # number of players - random 2- 8
+        number = randint(2, 8)
+
+        def user_input(*args):
+            return str(number)
+
+        players = module.Players(user_input)
+        self.assertEqual(players.get_players_number(), number)
+
+        # number of players = 1
+        number = 1
+
+        def user_input(*args):
+            return str(number)
+
+        self.assertRaises(AssertionError, module.Players, user_input)
+
+        # number of players = 9
+        number = 9
+
+        def user_input(*args):
+            return str(number)
+
+        self.assertRaises(AssertionError, module.Players, user_input)
+
+    def test_class_player(self):
+        """
+        unit test for methods from class Player
+        """
+
+        module.Player.player_id = 0
+
+        player1 = module.Player()
+        player2 = module.Player()
+
+        self.assertEqual(player1.get_player_id(), 0)
+        self.assertEqual(player2.get_player_id(), 1)
+        self.assertEqual(player1.get_player_name(), 0)
+        self.assertEqual(player2.get_player_name(), 1)
+
+        # get_handcards()
+
+        card = 'bla'
+        self.assertRaises(AssertionError, player1.put_handcard, card)
+        card = ("sharp_vision", "fat")
+        player1.put_handcard(card)
+        self.assertEqual(player1.get_handcards(), [card])
+
+        def user_input(*args):
+            return '0'
+
+        card = player1.take_handcard(user_input)
+        self.assertEqual(card, ("sharp_vision", "fat"))
+        self.assertEqual(player1.get_handcards(), [])
+
+    def test_Deck_class(self):
+        """
+        unit test for Deck
+        """
+        deck = module.Deck(2)
+        self.assertEqual(len(deck.get_playing_deck()), 4 * len(module.Deck.get_cards()))
+
+        number_of_cards = randint(1, 15)
+        cards = deck.take_deckcards(number_of_cards)
+        self.assertEqual(type(cards), list)
+        self.assertEqual(len(deck.get_playing_deck()), (4 * len(module.Deck.get_cards()) - number_of_cards))
+
+    # development phase class
     def test_development_phase(self):
         """
-        unit test for module.development_phase(players: list, number: int) function
+        unit test for development phase class
         """
+        number_of_players = 2
 
-        players_list = [module.Player('first_player'), module.Player('second_player')]
-        cards = [("ostr", "zhir"), ("topo", "zhir"), ("para", "hish"), ("para", "zhir"),
-                 ("norn", "zhir"), (["sotr"], "hish"), (["sotr"], "zhir"), ("jado", "hish"),
-                 ("komm", "zhir"), ("spac", "hish"), ("mimi",), (["simb"],),
-                 ("pada",), ("pira",), ("otbr",), ("bist",), ("vodo",), ("vodo",),
-                 (["vzai"], "hish"), ("bols", "zhir"), ("bols", "hish")]
-        hands = [("ostr", "zhir"), ("ostr", "zhir")]
-        for player in players_list:
-            player.cards_hand.extend(hands)
-        first_number = 0
-        razvitie = module.Development_Phase(players_list, first_number)
-        """# if all players say pass (len(list_of_pass = len(players))
-        razvitie.list_of_pass = players_list[:]
-        razvitie.faza_rezvitija_function()
-    # if current player in list_say_pass - next player
-        razvitie = module.Faza_Razvitija(players_list[:], first_number)
-        razvitie.list_of_pass.append(first_number)
-        razvitie.faza_rezvitija_function()
-    # if player has not cards in his hand - automatic pass
-        players_list[0].set_cards_hand([])
-        razvitie = module.Faza_Razvitija(players_list, first_number)
-        razvitie.faza_rezvitija_function()
-    #if active player don't have animals
-        razvitie.test = True
-        razvitie.faza_rezvitija_function()
-        """
+        def user_input(*arg):
+            return str(number_of_players)
 
-    def test_make_property(self):
-        """
-        unit test for make_property function
-        """
+        players_list = module.Players(user_input)
 
-        class Player(module.Player):
-            def take_handcard(self):
-                return 'carnivorous',
+        mitja = players_list.first_number_player
+        mitja.name = 'mitja'
+        for player in players_list.get_player_list():
+            if player != mitja:
+                vanja = player
+        vanja.name = 'vanja'
 
-        class functions_test(module.Functions):
+        mitja.put_handcard(("sharp_vision", "fat"))
+        mitja.put_handcard(("poisonous", "carnivorous"))
+        mitja.put_handcard(("cooperation", "fat"))
+        mitja.put_handcard(("communication", "carnivorous"))
+        mitja.put_handcard(("poisonous", "carnivorous"))
+        mitja.put_handcard(("grazing", "fat"))
+        print(f'mitja hand: {mitja.get_handcards()}')
 
-            @staticmethod
-            def input_function(alternatives, greeting: str):
-                return next(answers_generator)
+        vanja.put_handcard(("sharp_vision", "fat"))
+        vanja.put_handcard(("poisonous", "carnivorous"))
+        vanja.put_handcard(("communication", "carnivorous"))
+        vanja.put_handcard(("camouflage", "fat"))
+        vanja.put_handcard(("grazing", "fat"))
+        vanja.put_handcard(("burrowing", "fat"))
+        print(f'vanja hand: {vanja.get_handcards()}')
 
-        def gen_answer():
-            # put here answers to question in list
-            answers = ['1', 'y']
+        # structure of the longest string^
+        # 'n' - do you want to say pass?
+        # '1' - choose card from card hand (every turn 1 - because they shift to top
+        # 'p' - animal/property?
+        # '1' - your card has two properties - choose one of them
+        # '1' - for animal
+        # '2' - for second animal if it is pair property (like communication, cooperation, symbiosus)
+
+        answers = ['1',  # mitja add first animal
+                   '1',  # vanja add first animal
+                   'n', '1', 'p', '1', '1',  # mitja add poisonous property to 1 animal
+                   'n', '1', 'a',  # vanja add second animal
+                   'n', '1', 'a',  # mitja add second animal
+                   'n', '1', 'p', '1', '1', '2',  # vanja add communication to animals 1,2
+                   'n', '1', 'p', '2', '1',  # mitja add carnivorous to second animal
+                   'n', '1', 'p', '1', '2',  # vanja add camouflage to second animal
+                   'n', '1', 'a',  # mitja add third animal
+                   'n', '1', 'p', '1', '2',  # vanja add grazing to second animal
+                   'y',  # mitja say pass
+                   'n', '1', 'p', '2', '2']  # vanja add fat to second animal
+
+        def gen_answers(answers):
             for answer in answers:
                 yield answer
 
-        answers_generator = gen_answer()
+        user_gen = gen_answers(answers)
 
-        def clear_players(playerslist):
-            playerslist = []
+        def user_input(*args):
+            return next(user_gen)
 
-        players_list = [Player(str(x)) for x in range(3)]
+        development_phase = module.Development_Phase(user_input)
 
-        player = players_list[0]
-        """# player has one animal
-        player.get_player_animals().append(module.Animal())
-        self.assertEqual(functions_test.make_property(player, players_list), 1)
-        self.assertEqual('property' in player.get_player_animals()[0].get_animal_properties(), True)
-        # if property value in animal_properties
-        clear_players(players_list)
-        players_list = [Player(str(x)) for x in range(3)]
-        player = players_list[0]
-        player.get_player_animals().append(module.Animal())
-        player.get_player_animals()[0].get_animal_properties().append('property')
-        self.assertEqual(functions_test.make_property(player, players_list), 0)
-        self.assertEqual(('property',) in player.get_cards_hand(), True)
-        
-        # if property value == hish and pada in animal properties
-        clear_players(players_list)
-        players_list = [Player(str(x)) for x in range(3)]
-        player = players_list[0]
-        player.get_player_animals().append(module.Animal())
-        player.get_player_animals()[0].get_animal_properties().append('hish')
-        self.assertEqual(functions_test.make_property(player, players_list), 0)
-        self.assertEqual(('pada',) in player.get_cards_hand(), True)
-        """
-        # if property value == pada and hish in animal properties
-        clear_players(players_list)
-        players_list = [Player(str(x)) for x in range(3)]
-        player = players_list[0]
-        player.animals.append(module.Animal())
-        player.get_player_animals()[0].add_single_animal_property('scavenger')
-        self.assertEqual(functions_test.make_property(player, players_list), 0)
-        self.assertEqual(('carnivorous',) in player.get_handcards(), True)
+        self.assertEqual(len(mitja.get_player_animals()), 3)
+        self.assertEqual(len(vanja.get_player_animals()), 2)
+
+        animal_m_1 = mitja.get_player_animals()[0]
+        animal_m_2 = mitja.get_player_animals()[1]
+        animal_m_3 = mitja.get_player_animals()[2]
+
+        animal_v_1 = vanja.get_player_animals()[0]
+        animal_v_2 = vanja.get_player_animals()[1]
+
+        self.assertEqual(animal_m_1.is_carnivorous(), True)
+        self.assertEqual(animal_m_1.is_poisonous(), True)
+        self.assertEqual(animal_m_1.get_hungry(), 2)
+
+        self.assertEqual(animal_m_2.get_hungry(), 1)
+        self.assertEqual(animal_m_2.get_single_animal_properties(), [])
+        self.assertEqual(animal_m_2.get_fat(), 0)
+
+        self.assertEqual(animal_m_3.get_hungry(), 1)
+        self.assertEqual(animal_m_3.get_single_animal_properties(), [])
+        self.assertEqual(animal_m_3.get_fat(), 0)
+
+        print(f'animal_m_1: {animal_m_1.get_animal_properties()}')
+        print(f'animal_m_2: {animal_m_2.get_animal_properties()}')
+        print(f'animal_m_3: {animal_m_3.get_animal_properties()}')
+
+        self.assertEqual(animal_v_1.get_hungry(), 1)
+        self.assertEqual(animal_v_1.get_single_animal_properties(), [])
+        self.assertEqual(animal_v_1.get_fat(), 0)
+
+        self.assertEqual(animal_v_2.get_hungry(), 1)
+        self.assertEqual(animal_v_2.get_single_animal_properties(), ['camouflage', 'grazing'])
+        self.assertEqual(animal_v_2.get_fat(), 0)
+        self.assertEqual(animal_v_2.fat_cards_count, 1)
+        self.assertEqual(animal_v_2 in animal_v_1.get_communication(), True)
+        self.assertEqual(animal_v_1 in animal_v_2.get_communication(), True)
+
+        print(f'animal_v_1: {animal_v_1.get_animal_properties()}')
+        print(f'animal_v_2: {animal_v_2.get_animal_properties()}')
+
+    '''
+    
 
     def test_init_Eating_Phase(self):
         """
@@ -485,7 +559,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animals[4].get_hungry(), 0)
         self.assertEqual(animals[5].get_hungry(), 0)
 
-    '''
+    
     def test_take_red_fish(self):
 
         """
@@ -715,7 +789,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(players[0].animals[0].fat, 0)
         self.assertEqual(players[0].animals[1].fat, 1)
         
-    '''
+    
 
     def test_fat_to_blue_fish(self):
         """
@@ -755,7 +829,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animal.get_fat(), 0)
         self.assertEqual(animal.get_is_full_fat(), 1)
 
-
+    '''
 
 
 if __name__ == '__main__':
