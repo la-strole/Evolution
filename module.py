@@ -310,6 +310,38 @@ class Animal:
 
         self.single_properties.append(property)
 
+    def remove_single_animal_property(self, property):
+        """
+        remove single animal property from animal properties (for tail loss function)
+        assume property in animal properties
+        return none
+        """
+        assert property in self.get_single_animal_properties()
+
+        self.single_properties.remove(property)
+
+        if property == 'hibernation_ability':
+            self.hibernation_possibility_False()
+            self.hibernation_active = False
+
+        hungry = 1
+        if 'high_body_weight' in self.get_single_animal_properties():
+            hungry += 1
+        if 'carnivorous' in self.get_single_animal_properties():
+            hungry += 1
+        if 'parasite' in self.get_single_animal_properties():
+            hungry += 2
+
+        while (hungry - self.red_fish_count - self.blue_fish_count) < 0:
+            if self.red_fish_count > 0:
+                self.red_fish_count -= 1
+            else:
+                self.blue_fish_count -= 1
+
+        assert self.get_hungry() >= 0
+        assert self.red_fish_count >= 0
+        assert self.blue_fish_count >= 0
+
     def get_single_animal_properties(self):
         """
         return property: list - list of animal properties
@@ -356,9 +388,15 @@ class Animal:
             hungry += 2
 
         result = hungry - self.red_fish_count - self.blue_fish_count
-        assert result > 0
+        assert result >= 0
 
         return result
+
+    def get_fat_cards(self):
+        """
+        return numbr of fat cards: int
+        """
+        return self.fat_cards_count
 
     def get_fat(self):
         """
@@ -402,6 +440,18 @@ class Animal:
         return None
         """
         self.fat_cards_count += 1
+
+    def remove_fat_card(self):
+        """
+        remove fat card from animal
+        return none
+        """
+        assert self.get_fat_cards() > 0
+
+        self.fat_cards_count -= 1
+
+        if self.fat > self.fat_cards_count:
+            self.fat = self.fat_cards_count
 
     def has_parasite(self):
         """
@@ -595,6 +645,18 @@ class Animal:
         """
         return self.symbiosys.copy()
 
+    def remove_symbiosys(self, symbiont):
+        """
+        remove symbiosys from animal symbiosys list (for lost tail property)
+        symbiont - Aniaml() to remove
+        assume symbiont in symbiosys list
+        return None
+        """
+        assert isinstance(symbiont, Animal)
+        assert symbiont in self.get_symbiosys()
+
+        self.symbiosys.remove(symbiont)
+
     def exist_hungry_symbiosys(self):
         """
         return True if there are hungry symbionts (then animal can't eat), else return False
@@ -624,6 +686,21 @@ class Animal:
         """
         return self.communication.copy()
 
+    def remove_communication(self, communicator):
+        """
+        remove communicator from animal communication list, remove animal from communicator cooperation list
+        for tail loss function
+        assume communicator - Animal()
+        assume communicator in animal communication list
+        return None
+        """
+        assert isinstance(communicator, Animal)
+        assert communicator in self.get_communication()
+        assert self in communicator.get_communication()
+
+        self.communication.remove(communicator)
+        communicator.communication.remove(self)
+
     def add_cooperation(self, animal):
         """
         animal: Animal() instance
@@ -640,6 +717,21 @@ class Animal:
         returns list of cooperation of current animal (instances of Animal class)
         """
         return self.cooperation.copy()
+
+    def remove_cooperation(self, cooperator):
+        """
+        remove cooperator from animal cooperation list, remove animal from cooperator cooperation list
+        for tail loss function
+        assume cooperator - Animal()
+        assume cooperator in animal cooperation list
+        return None
+        """
+        assert isinstance(cooperator, Animal)
+        assert cooperator in self.get_cooperation()
+        assert self in cooperator.get_cooperation()
+
+        self.cooperation.remove(cooperator)
+        cooperator.cooperation.remove(self)
 
     def can_eat(self):
         """
@@ -820,7 +912,6 @@ class Development_Phase:
         """
 
         assert isinstance(player, Player), f'Development_Phase.make_symbiosys_property(): player is not Player instance'
-
 
         if len(player.get_player_animals()) < 2:
             print('player has less then 2 animals')
@@ -1202,7 +1293,7 @@ class Eating_Phase:
             eating_base = eating_base - int(destroy_number)
         else:
             print(f'Eating_phase.grazing_function(): destroy number > eating base')
-            raise AssertionError
+            raise ValueError
         print(f'new eating base = {eating_base}')
         return eating_base
 
@@ -1369,7 +1460,7 @@ class Eating_Phase:
         return None
 
     @staticmethod
-    def take_red_fish(player: Player, animal: Animal, eating_base):
+    def take_red_fish(player: Player, animal: Animal, eating_base: int, user_input=Functions.input_function):
         """
         player: Player() instance
         animal: Animal instance
@@ -1401,10 +1492,10 @@ class Eating_Phase:
 
         # if animal communication
         if animal.get_communication() and eating_base > 0:
-            eating_base = Eating_Phase.communication(player, animal, eating_base)
+            eating_base = Eating_Phase.communication(player, animal, eating_base, user_input)
         # if animal cooperation
         if animal.get_cooperation():
-            Eating_Phase.cooperation(player, animal)
+            Eating_Phase.cooperation(player, animal, user_input)
         return eating_base
 
     @staticmethod
@@ -1538,7 +1629,7 @@ class Eating_Phase:
             return False
 
     @staticmethod
-    def tail_loss_property(animal: Animal):
+    def tail_loss_property(animal: Animal, user_input=Functions.input_function):
         """
         if attacked by carnivorous animal is tail loss - it remove one of its properties
         animal - Animal() instance
@@ -1550,9 +1641,71 @@ class Eating_Phase:
         assert animal.is_tail_loss(), f'Eating_Phase.running_property(): animal has not tail_loss property'
 
         # 1 take list of animal properties - if it is empty return false
+        single_properties_cards = animal.get_single_animal_properties()
+        symbiosys_properties_cards = animal.get_symbiosys()
+        communication_properties_cards = animal.get_communication()
+        cooperation_properties_cards = animal.get_cooperation()
+        fat_cards = animal.get_fat_cards()
+
+        print('choose property to remove as tail:')
+        for number_single, property in enumerate(single_properties_cards):
+            print(f'{number_single + 1} {property}')
+
+        for number_symb, symbiont in enumerate(symbiosys_properties_cards):
+            print(f'{number_symb + number_single} symbiosys {symbiont}')
+
+        for number_coop, cooperator in enumerate(cooperation_properties_cards):
+            print(f'{number_coop + number_single + number_symb} cooperators {cooperator}')
+
+        for number_comm, communicator in enumerate(communication_properties_cards):
+            print(f'{number_comm + number_single + number_symb + number_coop} communicator {communicator}')
+
+        for number_fat in range(fat_cards):
+            print(f'{number_fat + number_single + number_symb + number_coop + number_comm} fat')
+
+        all_numbers = number_fat + number_single + number_symb + number_comm + number_coop
 
         # 2 choose property to remove
-        # 3 change single and pair properties
+
+        choose = user_input([str(x + 1) for x in range(all_numbers)], 'Choose property number to remove as tail: ')
+        choose_num = int(choose) - 1
+
+        if choose_num <= number_single:
+            tail = ('single', single_properties_cards[choose_num])
+
+        elif choose_num <= number_single + number_symb:
+            tail = ('symbiosys', symbiosys_properties_cards[choose_num - number_single])
+        elif choose_num <= number_single + number_symb + number_coop:
+            tail = ('cooperation', cooperation_properties_cards[choose_num - number_single - number_symb])
+        elif choose_num <= number_single + number_symb + number_coop + number_comm:
+            tail = ('communication', communication_properties_cards[choose_num - number_single - number_symb -
+                                                                    number_coop])
+        elif choose_num <= number_single + number_symb + number_coop + number_comm + number_fat:
+            tail = ('fat cards', 'fat')
+        else:
+            raise ValueError
+
+        # 3 change single and pair properties, and relationships
+        if tail[0] == 'single':
+            print(f'you choose single property {tail[1]}')
+            animal.remove_single_animal_property(tail[1])
+
+        elif tail[0] == 'symbiosys':
+            print(f'you choose symbiosys property with animal {tail[1]}')
+            animal.remove_symbiosys(tail[1])
+
+        elif tail[0] == 'cooperation':
+            print(f'you choose cooperation property with animal {tail[1]}')
+            animal.remove_cooperation(tail[1])
+
+        elif tail[0] == 'communication':
+            print(f'you choose communication property with animal {tail[1]}')
+            animal.remove_communication(tail[1])
+
+        elif tail[0] == 'fat':
+            print(f'you choose fat property')
+            animal.remove_fat_card()
+
 
     @staticmethod
     def hunting(animal: Animal, player_list: list):
