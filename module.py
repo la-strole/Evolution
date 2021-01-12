@@ -113,6 +113,7 @@ class Players:
         return first_player
 
 
+
 class Player:
     """ Player container of animals. """
     player_id = 0
@@ -307,6 +308,13 @@ class Animal:
                             'hibernation_ability', 'tail_loss', 'mimicry', 'running', 'poisonous', 'grazing',
                             'scavenger', 'camouflage', 'piracy'], f'Animal.add_single_animal_property(): ' \
                                                                   f'property is not from deck single properties'
+
+        assert property not in self.get_single_animal_properties()
+        if property == 'scavenger':
+            assert 'carnivorous' not in self.get_single_animal_properties()
+        elif property == 'carnivorous':
+            assert 'scavenger' not in self.get_single_animal_properties()
+
 
         self.single_properties.append(property)
 
@@ -898,9 +906,17 @@ class Development_Phase:
         if property in animal.get_single_animal_properties():
             print('this animal already has this property')
             return False
-        else:
-            animal.add_single_animal_property(property)
-            return True
+        elif property == 'scavenger':
+            if 'carnivorous' in animal.get_single_animal_properties():
+                print('carnivorous can not be scavenger')
+                return False
+        elif property == 'carnivorous':
+            if 'scavenger' in animal.get_single_animal_properties():
+                print('scavenger can not be carnivorous')
+                return False
+
+        animal.add_single_animal_property(property)
+        return True
 
     @staticmethod
     def make_symbiosys_property(player: Player, user_input=Functions.input_function):
@@ -1634,7 +1650,7 @@ class Eating_Phase:
         if attacked by carnivorous animal is tail loss - it remove one of its properties
         animal - Animal() instance
         assume animal has tail loss property
-        return True if victim loss tail, else - return False
+        return None
         """
 
         assert isinstance(animal, Animal), f'Eating_Phase.running_property(): animal is not animal instance'
@@ -1647,21 +1663,27 @@ class Eating_Phase:
         cooperation_properties_cards = animal.get_cooperation()
         fat_cards = animal.get_fat_cards()
 
+        number_single = len(single_properties_cards)
+        number_symb = len(symbiosys_properties_cards)
+        number_coop = len(cooperation_properties_cards)
+        number_comm = len(communication_properties_cards)
+        number_fat = fat_cards
+
         print('choose property to remove as tail:')
-        for number_single, property in enumerate(single_properties_cards):
-            print(f'{number_single + 1} {property}')
+        for _, property in enumerate(single_properties_cards):
+            print(f'{_ + 1} {property}')
 
-        for number_symb, symbiont in enumerate(symbiosys_properties_cards):
-            print(f'{number_symb + number_single} symbiosys {symbiont}')
+        for _, symbiont in enumerate(symbiosys_properties_cards):
+            print(f'{_ + number_single + 1} symbiosys {symbiont}')
 
-        for number_coop, cooperator in enumerate(cooperation_properties_cards):
-            print(f'{number_coop + number_single + number_symb} cooperators {cooperator}')
+        for _, cooperator in enumerate(cooperation_properties_cards):
+            print(f'{_ + number_single + number_symb + 1} cooperators {cooperator}')
 
-        for number_comm, communicator in enumerate(communication_properties_cards):
-            print(f'{number_comm + number_single + number_symb + number_coop} communicator {communicator}')
+        for _, communicator in enumerate(communication_properties_cards):
+            print(f'{_ + number_single + number_symb + number_coop + 1} communicator {communicator}')
 
-        for number_fat in range(fat_cards):
-            print(f'{number_fat + number_single + number_symb + number_coop + number_comm} fat')
+        for _ in range(fat_cards):
+            print(f'{_ + number_single + number_symb + number_coop + number_comm + 1} fat')
 
         all_numbers = number_fat + number_single + number_symb + number_comm + number_coop
 
@@ -1670,18 +1692,18 @@ class Eating_Phase:
         choose = user_input([str(x + 1) for x in range(all_numbers)], 'Choose property number to remove as tail: ')
         choose_num = int(choose) - 1
 
-        if choose_num <= number_single:
+        if choose_num < number_single:
             tail = ('single', single_properties_cards[choose_num])
 
-        elif choose_num <= number_single + number_symb:
+        elif choose_num < number_single + number_symb:
             tail = ('symbiosys', symbiosys_properties_cards[choose_num - number_single])
-        elif choose_num <= number_single + number_symb + number_coop:
+        elif choose_num < number_single + number_symb + number_coop:
             tail = ('cooperation', cooperation_properties_cards[choose_num - number_single - number_symb])
-        elif choose_num <= number_single + number_symb + number_coop + number_comm:
+        elif choose_num < number_single + number_symb + number_coop + number_comm:
             tail = ('communication', communication_properties_cards[choose_num - number_single - number_symb -
                                                                     number_coop])
-        elif choose_num <= number_single + number_symb + number_coop + number_comm + number_fat:
-            tail = ('fat cards', 'fat')
+        elif choose_num < number_single + number_symb + number_coop + number_comm + number_fat:
+            tail = ('fat_cards', 'fat')
         else:
             raise ValueError
 
@@ -1702,9 +1724,10 @@ class Eating_Phase:
             print(f'you choose communication property with animal {tail[1]}')
             animal.remove_communication(tail[1])
 
-        elif tail[0] == 'fat':
+        elif tail[0] == 'fat_cards':
             print(f'you choose fat property')
             animal.remove_fat_card()
+
 
 
     @staticmethod

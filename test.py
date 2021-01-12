@@ -1,7 +1,9 @@
 import module
 import unittest
+import random
 from unittest.mock import patch
 from random import randint, sample
+from os import system
 
 
 class TestEvolution(unittest.TestCase):
@@ -176,8 +178,10 @@ class TestEvolution(unittest.TestCase):
                    'y',  # mitja say pass
                    'n', '1', 'p', '2', '2']  # vanja add fat to second animal
 
+
         def gen_answers(answers):
             for answer in answers:
+                print(f'user answer = {answer}')
                 yield answer
 
         user_gen = gen_answers(answers)
@@ -226,6 +230,7 @@ class TestEvolution(unittest.TestCase):
 
         print(f'animal_v_1: {animal_v_1.get_animal_properties()}')
         print(f'animal_v_2: {animal_v_2.get_animal_properties()}')
+
 
     def test_init_Eating_Phase(self):
         """
@@ -697,6 +702,180 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animal.get_hungry(), 0)
         self.assertEqual(animal.get_fat(), 0)
         self.assertEqual(animal.get_is_full_fat(), 1)
+
+
+    def test_tail_loss_property(self):
+        """
+        unit test for tail loss property
+        """
+
+        # tail = tail loss card
+
+        animal = module.Animal()
+        animal.add_single_animal_property('tail_loss')
+
+        def user_input(*args):
+            return '1'
+
+        module.Eating_Phase.tail_loss_property(animal, user_input)
+        self.assertEqual(len(animal.get_single_animal_properties()), 0)
+        print(animal.get_animal_properties())
+
+        # add another single property
+
+        animal = module.Animal()
+        animal.add_single_animal_property('tail_loss')
+        animal.add_single_animal_property('piracy')
+
+        def user_input(*args):
+            return '2'
+
+        module.Eating_Phase.tail_loss_property(animal, user_input)
+        self.assertEqual(len(animal.get_single_animal_properties()), 1)
+        print(animal.get_animal_properties())
+
+        # add "high body weight" single properties"
+
+        animal = module.Animal()
+        animal.add_single_animal_property('tail_loss')
+        animal.add_single_animal_property('high_body_weight')
+        animal.add_single_animal_property('piracy')
+
+        def user_input(*args):
+            return '2'
+
+        self.assertEqual(animal.get_hungry(), 2)
+        animal.increase_red_fish(2)
+        self.assertEqual(animal.get_hungry(), 0)
+        module.Eating_Phase.tail_loss_property(animal, user_input)
+        self.assertEqual(len(animal.get_single_animal_properties()), 2)
+        self.assertEqual(animal.get_hungry(), 0)
+        self.assertEqual(animal.red_fish_count, 1)
+        print(animal.get_animal_properties())
+
+        # add "parasite, carnivorous" single properties"
+
+        animal = module.Animal()
+        animal.add_single_animal_property('tail_loss')
+        animal.add_single_animal_property('high_body_weight')
+        animal.add_single_animal_property('parasite')
+        animal.add_single_animal_property('carnivorous')
+
+        def user_input(*args):
+            return '3'
+
+        self.assertEqual(animal.get_hungry(), 5)
+        animal.increase_red_fish(1)
+        animal.increase_blue_fish(4)
+        self.assertEqual(animal.get_hungry(), 0)
+        module.Eating_Phase.tail_loss_property(animal, user_input)
+        self.assertEqual(len(animal.get_single_animal_properties()), 3)
+        self.assertEqual(animal.get_hungry(), 0)
+        self.assertEqual(animal.red_fish_count, 0)
+        self.assertEqual(animal.blue_fish_count, 3)
+        print(animal.get_animal_properties())
+
+        # add symbiosys property
+
+        animal = module.Animal()
+        symbiont1 = module.Animal()
+        symbiont2 = module.Animal()
+        animal.add_single_animal_property('tail_loss')
+        animal.add_symbiosys(symbiont1)
+        animal.add_symbiosys(symbiont2)
+        animal.add_single_animal_property('piracy')
+
+        def user_input(*args):
+            return '4'
+
+        self.assertEqual(animal.get_hungry(), 1)
+        module.Eating_Phase.tail_loss_property(animal, user_input)
+        self.assertEqual(len(animal.get_single_animal_properties()), 2)
+        self.assertEqual(len(animal.get_symbiosys()), 1)
+        self.assertEqual(symbiont1 in animal.get_symbiosys(), True)
+        print(animal.get_animal_properties())
+
+        # add different properties
+
+        animal = module.Animal()
+        symbiont1 = module.Animal()
+        symbiont2 = module.Animal()
+        communicator1 = module.Animal()
+        communicator2 = module.Animal()
+        cooperator1 = module.Animal()
+        cooperator1.add_cooperation(animal)
+        cooperator2 = module.Animal()
+        cooperator2.add_cooperation(animal)
+        fat_cards = 2
+
+        animal.add_single_animal_property('tail_loss')
+        animal.add_symbiosys(symbiont1)
+        animal.add_symbiosys(symbiont2)
+        animal.add_single_animal_property('piracy')
+        animal.add_fat_card()
+        animal.add_fat_card()
+
+        def user_input(*args):
+            return '5'
+
+        self.assertEqual(animal.get_hungry(), 1)
+        module.Eating_Phase.tail_loss_property(animal, user_input)
+        self.assertEqual(len(animal.get_single_animal_properties()), 2)
+        self.assertEqual(len(animal.get_symbiosys()), 2)
+        self.assertEqual(symbiont1 in animal.get_symbiosys(), True)
+        self.assertEqual(animal.get_fat_cards(), 1)
+        print(animal.get_animal_properties())
+
+        animal.add_cooperation(cooperator1)
+        animal.add_cooperation(cooperator2)
+
+        def user_input(*args):
+            return '5'
+
+        module.Eating_Phase.tail_loss_property(animal, user_input)
+        self.assertEqual(len(animal.get_cooperation()), 1)
+        self.assertEqual(len(cooperator1.get_cooperation()), 0)
+
+        def hand_test_tail_loss():
+
+            animal = module.Animal()
+            animal.add_single_animal_property('tail_loss')
+            cooperators = []
+            communications = []
+            single_properties = ['high_body_weight', 'swimming', 'sharp_vision', 'burrowing', 'carnivorous', 'parasite',
+                                 'hibernation_ability', 'tail_loss', 'mimicry', 'running', 'poisonous', 'grazing',
+                                 'scavenger', 'camouflage', 'piracy']
+
+            for x in range(random.randint(3, 5)):
+                animal.single_properties.append(random.choice(single_properties))
+
+            symb = randint(0, 1)
+            comm = randint(0, 1)
+            coop = randint(0, 1)
+
+            if symb:
+                for s in range(randint(1, 3)):
+                    animal.add_symbiosys(module.Animal())
+
+            if comm:
+                for com in range(randint(1, 3)):
+                    communicator = module.Animal()
+                    communications.append(communicator)
+                    animal.add_communication(communicator)
+                    communicator.add_communication(animal)
+
+            if coop:
+                for coo in range(randint(1, 3)):
+                    cooperator = module.Animal()
+                    cooperators.append(cooperator)
+                    animal.add_communication(cooperator)
+                    cooperator.add_communication(animal)
+
+            print('*' * 100)
+            print(f'before: {animal.get_animal_properties()}')
+            module.Eating_Phase.tail_loss_property(animal)
+            print(f'after: {animal.get_animal_properties()}')
+
 
 
 if __name__ == '__main__':
