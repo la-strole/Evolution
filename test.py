@@ -178,7 +178,6 @@ class TestEvolution(unittest.TestCase):
                    'y',  # mitja say pass
                    'n', '1', 'p', '2', '2']  # vanja add fat to second animal
 
-
         def gen_answers(answers):
             for answer in answers:
                 print(f'user answer = {answer}')
@@ -230,7 +229,6 @@ class TestEvolution(unittest.TestCase):
 
         print(f'animal_v_1: {animal_v_1.get_animal_properties()}')
         print(f'animal_v_2: {animal_v_2.get_animal_properties()}')
-
 
     def test_init_Eating_Phase(self):
         """
@@ -703,7 +701,6 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(animal.get_fat(), 0)
         self.assertEqual(animal.get_is_full_fat(), 1)
 
-
     def test_tail_loss_property(self):
         """
         unit test for tail loss property
@@ -714,8 +711,13 @@ class TestEvolution(unittest.TestCase):
         animal = module.Animal()
         animal.add_single_animal_property('tail_loss')
 
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+        answers = ['y', '1']
+        f = user_gen(answers)
         def user_input(*args):
-            return '1'
+            return next(f)
 
         module.Eating_Phase.tail_loss_property(animal, user_input)
         self.assertEqual(len(animal.get_single_animal_properties()), 0)
@@ -727,8 +729,13 @@ class TestEvolution(unittest.TestCase):
         animal.add_single_animal_property('tail_loss')
         animal.add_single_animal_property('piracy')
 
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+        answers = ['y', '2']
+        f = user_gen(answers)
         def user_input(*args):
-            return '2'
+            return next(f)
 
         module.Eating_Phase.tail_loss_property(animal, user_input)
         self.assertEqual(len(animal.get_single_animal_properties()), 1)
@@ -741,8 +748,13 @@ class TestEvolution(unittest.TestCase):
         animal.add_single_animal_property('high_body_weight')
         animal.add_single_animal_property('piracy')
 
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+        answers = ['y', '2']
+        f = user_gen(answers)
         def user_input(*args):
-            return '2'
+            return next(f)
 
         self.assertEqual(animal.get_hungry(), 2)
         animal.increase_red_fish(2)
@@ -761,8 +773,13 @@ class TestEvolution(unittest.TestCase):
         animal.add_single_animal_property('parasite')
         animal.add_single_animal_property('carnivorous')
 
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+        answers = ['y', '3']
+        f = user_gen(answers)
         def user_input(*args):
-            return '3'
+            return next(f)
 
         self.assertEqual(animal.get_hungry(), 5)
         animal.increase_red_fish(1)
@@ -785,8 +802,13 @@ class TestEvolution(unittest.TestCase):
         animal.add_symbiosys(symbiont2)
         animal.add_single_animal_property('piracy')
 
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+        answers = ['y', '4']
+        f = user_gen(answers)
         def user_input(*args):
-            return '4'
+            return next(f)
 
         self.assertEqual(animal.get_hungry(), 1)
         module.Eating_Phase.tail_loss_property(animal, user_input)
@@ -815,8 +837,13 @@ class TestEvolution(unittest.TestCase):
         animal.add_fat_card()
         animal.add_fat_card()
 
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+        answers = ['y', '5']
+        f = user_gen(answers)
         def user_input(*args):
-            return '5'
+            return next(f)
 
         self.assertEqual(animal.get_hungry(), 1)
         module.Eating_Phase.tail_loss_property(animal, user_input)
@@ -829,8 +856,13 @@ class TestEvolution(unittest.TestCase):
         animal.add_cooperation(cooperator1)
         animal.add_cooperation(cooperator2)
 
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+        answers = ['y', '5']
+        f = user_gen(answers)
         def user_input(*args):
-            return '5'
+            return next(f)
 
         module.Eating_Phase.tail_loss_property(animal, user_input)
         self.assertEqual(len(animal.get_cooperation()), 1)
@@ -875,7 +907,6 @@ class TestEvolution(unittest.TestCase):
             print(f'before: {animal.get_animal_properties()}')
             module.Eating_Phase.tail_loss_property(animal)
             print(f'after: {animal.get_animal_properties()}')
-
 
 
 if __name__ == '__main__':
