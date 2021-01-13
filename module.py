@@ -310,7 +310,7 @@ class Animal:
         """
         return self.belong_to_player
 
-    @ staticmethod
+    @staticmethod
     def animal_death(animal, player):
         """
         process of animals death
@@ -319,8 +319,6 @@ class Animal:
         assert isinstance(animal, Animal)
         assert isinstance(player, Player)
         assert animal in player.get_player_animals()
-
-
 
         animal.alive = False
         player.animals.remove(animal)
@@ -338,9 +336,6 @@ class Animal:
         for item in player.get_player_animals():
             if animal in item.get_symbiosys():
                 item.symbiosys.remove(animal)
-
-
-
 
     def increase_red_fish(self, number=1):
         """
@@ -672,6 +667,12 @@ class Animal:
         """
         return self.poisoned
 
+    def poison(self):
+        """
+        set poisoned state to True
+        """
+        self.poisoned = True
+
     def is_burrowing(self):
         """
         return: Bool - if animal has burrowing  property
@@ -942,7 +943,8 @@ class Deck:
         """
 
         assert type(number) == int, f'Deck.take_deckcards: ({number}: number not an integer)'
-        assert len(self.playing_deck) >= number, f'DEck.take_deckcards: ({deck}: not enough cards to take to card hand)'
+        assert len(self.playing_deck) >= number, f'DEck.take_deckcards: ({self.playing_deck}: ' \
+                                                 f'not enough cards to take to card hand)'
 
         cards_to_return = []
         for _ in range(number):
@@ -1694,7 +1696,7 @@ class Eating_Phase:
             return False
 
     @staticmethod
-    def running_property(animal: Animal):
+    def running_property(animal: Animal, user_input=Functions.input_function):
         """
         if attacked by carnivorous animal is running - roll the dice 4,5,6 - survive
         animal - Animal() instance
@@ -1705,13 +1707,23 @@ class Eating_Phase:
         assert isinstance(animal, Animal), f'Eating_Phase.running_property(): animal is not animal instance'
         assert animal.is_running(), f'Eating_Phase.running_property(): animal has not running property'
 
-        dice = randint(1, 6)
-        print(f'you roll the dice - number is {dice}')
+        choose = user_input(['Y', 'y', 'n', 'N'], f'your animal has running property Do you want to use it? y/n: ')
 
-        if dice in [4, 5, 6]:
-            return True
-        else:
+        if choose == 'n':
             return False
+
+        elif choose == 'y':
+
+            dice = randint(1, 6)
+            print(f'you roll the dice - number is {dice}')
+
+            if dice in [4, 5, 6]:
+                return True
+            else:
+                return False
+
+        else:
+            raise ValueError
 
     @staticmethod
     def tail_loss_property(animal: Animal, user_input=Functions.input_function):
@@ -1719,90 +1731,101 @@ class Eating_Phase:
         if attacked by carnivorous animal is tail loss - it remove one of its properties
         animal - Animal() instance
         assume animal has tail loss property
-        return None
+        return True if animal loss tail else return False
         """
 
         assert isinstance(animal, Animal), f'Eating_Phase.running_property(): animal is not animal instance'
         assert animal.is_tail_loss(), f'Eating_Phase.running_property(): animal has not tail_loss property'
 
-        # 1 take list of animal properties - if it is empty return false
-        single_properties_cards = animal.get_single_animal_properties()
-        symbiosys_properties_cards = animal.get_symbiosys()
-        communication_properties_cards = animal.get_communication()
-        cooperation_properties_cards = animal.get_cooperation()
-        fat_cards = animal.get_fat_cards()
+        choose = user_input(['Y', 'y', 'n', 'N'], f'your animal has tail loss property Do you want to use it? y/n: ')
 
-        number_single = len(single_properties_cards)
-        number_symb = len(symbiosys_properties_cards)
-        number_coop = len(cooperation_properties_cards)
-        number_comm = len(communication_properties_cards)
-        number_fat = fat_cards
+        if choose == 'n':
+            return False
 
-        print('choose property to remove as tail:')
-        for _, property in enumerate(single_properties_cards):
-            print(f'{_ + 1} {property}')
+        elif choose == 'y':
+            # 1 take list of animal properties - if it is empty return false
+            single_properties_cards = animal.get_single_animal_properties()
+            symbiosys_properties_cards = animal.get_symbiosys()
+            communication_properties_cards = animal.get_communication()
+            cooperation_properties_cards = animal.get_cooperation()
+            fat_cards = animal.get_fat_cards()
 
-        for _, symbiont in enumerate(symbiosys_properties_cards):
-            print(f'{_ + number_single + 1} symbiosys {symbiont}')
+            number_single = len(single_properties_cards)
+            number_symb = len(symbiosys_properties_cards)
+            number_coop = len(cooperation_properties_cards)
+            number_comm = len(communication_properties_cards)
+            number_fat = fat_cards
 
-        for _, cooperator in enumerate(cooperation_properties_cards):
-            print(f'{_ + number_single + number_symb + 1} cooperators {cooperator}')
+            print('choose property to remove as tail:')
+            for _, property in enumerate(single_properties_cards):
+                print(f'{_ + 1} {property}')
 
-        for _, communicator in enumerate(communication_properties_cards):
-            print(f'{_ + number_single + number_symb + number_coop + 1} communicator {communicator}')
+            for _, symbiont in enumerate(symbiosys_properties_cards):
+                print(f'{_ + number_single + 1} symbiosys {symbiont}')
 
-        for _ in range(fat_cards):
-            print(f'{_ + number_single + number_symb + number_coop + number_comm + 1} fat')
+            for _, cooperator in enumerate(cooperation_properties_cards):
+                print(f'{_ + number_single + number_symb + 1} cooperators {cooperator}')
 
-        all_numbers = number_fat + number_single + number_symb + number_comm + number_coop
+            for _, communicator in enumerate(communication_properties_cards):
+                print(f'{_ + number_single + number_symb + number_coop + 1} communicator {communicator}')
 
-        # 2 choose property to remove
+            for _ in range(fat_cards):
+                print(f'{_ + number_single + number_symb + number_coop + number_comm + 1} fat')
 
-        choose = user_input([str(x + 1) for x in range(all_numbers)], 'Choose property number to remove as tail: ')
-        choose_num = int(choose) - 1
+            all_numbers = number_fat + number_single + number_symb + number_comm + number_coop
 
-        if choose_num < number_single:
-            tail = ('single', single_properties_cards[choose_num])
+            # 2 choose property to remove
 
-        elif choose_num < number_single + number_symb:
-            tail = ('symbiosys', symbiosys_properties_cards[choose_num - number_single])
-        elif choose_num < number_single + number_symb + number_coop:
-            tail = ('cooperation', cooperation_properties_cards[choose_num - number_single - number_symb])
-        elif choose_num < number_single + number_symb + number_coop + number_comm:
-            tail = ('communication', communication_properties_cards[choose_num - number_single - number_symb -
-                                                                    number_coop])
-        elif choose_num < number_single + number_symb + number_coop + number_comm + number_fat:
-            tail = ('fat_cards', 'fat')
+            choose = user_input([str(x + 1) for x in range(all_numbers)], 'Choose property number to remove as tail: ')
+            choose_num = int(choose) - 1
+
+            if choose_num < number_single:
+                tail = ('single', single_properties_cards[choose_num])
+
+            elif choose_num < number_single + number_symb:
+                tail = ('symbiosys', symbiosys_properties_cards[choose_num - number_single])
+            elif choose_num < number_single + number_symb + number_coop:
+                tail = ('cooperation', cooperation_properties_cards[choose_num - number_single - number_symb])
+            elif choose_num < number_single + number_symb + number_coop + number_comm:
+                tail = ('communication', communication_properties_cards[choose_num - number_single - number_symb -
+                                                                        number_coop])
+            elif choose_num < number_single + number_symb + number_coop + number_comm + number_fat:
+                tail = ('fat_cards', 'fat')
+            else:
+                raise ValueError
+
+            # 3 change single and pair properties, and relationships
+            if tail[0] == 'single':
+                print(f'you choose single property {tail[1]}')
+                animal.remove_single_animal_property(tail[1])
+
+            elif tail[0] == 'symbiosys':
+                print(f'you choose symbiosys property with animal {tail[1]}')
+                animal.remove_symbiosys(tail[1])
+
+            elif tail[0] == 'cooperation':
+                print(f'you choose cooperation property with animal {tail[1]}')
+                animal.remove_cooperation(tail[1])
+
+            elif tail[0] == 'communication':
+                print(f'you choose communication property with animal {tail[1]}')
+                animal.remove_communication(tail[1])
+
+            elif tail[0] == 'fat_cards':
+                print(f'you choose fat property')
+                animal.remove_fat_card()
+
+            return True
+
         else:
             raise ValueError
 
-        # 3 change single and pair properties, and relationships
-        if tail[0] == 'single':
-            print(f'you choose single property {tail[1]}')
-            animal.remove_single_animal_property(tail[1])
-
-        elif tail[0] == 'symbiosys':
-            print(f'you choose symbiosys property with animal {tail[1]}')
-            animal.remove_symbiosys(tail[1])
-
-        elif tail[0] == 'cooperation':
-            print(f'you choose cooperation property with animal {tail[1]}')
-            animal.remove_cooperation(tail[1])
-
-        elif tail[0] == 'communication':
-            print(f'you choose communication property with animal {tail[1]}')
-            animal.remove_communication(tail[1])
-
-        elif tail[0] == 'fat_cards':
-            print(f'you choose fat property')
-            animal.remove_fat_card()
-
     @staticmethod
-    def mimicry_property(animal: Animal, player: Player, user_input=Functions.input_function):
+    def mimicry_property(animal: Animal, player: Player, mimicry_list: list, user_input=Functions.input_function):
         """
         redirect attack from current animal to another animal in players hand
         assume player haas more then 1 animals in his hand
-        return another animal
+        return another animal or False
         """
         assert isinstance(animal, Animal)
         assert isinstance(player, Player)
@@ -1810,19 +1833,61 @@ class Eating_Phase:
         assert 'mimicry' in animal.get_single_animal_properties()
         assert len(player.get_player_animals()) >= 2
 
-        print('choose animal to redirect attack')
-        redirected_animal = player.get_player_animal(player, user_input)
+        choose = user_input(['Y', 'y', 'n', 'N'], f'your animal has mimicry property. Do you want to use it? y/n: ')
 
-        while animal == redirected_animal:
-            print('you can not redirect attack to yourself. Choose another animal:')
-            redirected_animal = redirected_animal = player.get_player_animal(player, user_input)
+        if choose == 'n' or animal in mimicry_list:
+            return False
 
-        return redirected_animal
+        elif choose == 'y':
 
+            print('choose animal to redirect attack')
+            redirected_animal = player.get_player_animal(player, user_input)
 
+            while animal == redirected_animal:
+                print('you can not redirect attack to yourself. Choose another animal:')
+                redirected_animal = redirected_animal = player.get_player_animal(player, user_input)
+            mimicry_list.append(animal)
+            return redirected_animal
+
+        else:
+            raise ValueError
 
     @staticmethod
-    def hunting(animal: Animal, player_list: list, user_input=Functions.input_function):
+    def attack_function(victim: Animal, carnivorous: Animal, players: list, mimicry_list: list,
+                        user_input=Functions.input_function):
+        """
+        return number of blue fish after carnivorous attack animal: int
+        """
+        assert isinstance(victim, Animal)
+        assert type(players) == list
+        for _ in players:
+            assert isinstance(player, Player)
+        assert type(mimicry_list) == list
+        assert isinstance(carnivorous, Animal)
+
+        victim_player = Animal.find_players_animal_belong(victim, players)
+        print(f'{victim_player}, your animal is under attack!')
+
+        if victim.is_running():
+            result = Eating_Phase.running_property(victim, user_input)
+            if result:
+                return 0
+        if victim.is_tail_loss():
+            result = Eating_Phase.tail_loss_property(victim, user_input)
+            if result:
+                return 1
+        if victim.is_mimicry():
+            result = Eating_Phase.mimicry_property(victim, victim_player, mimicry_list, user_input)
+            if result != False:
+                return Eating_Phase.attack_function(result, carnivorous, players, mimicry_list, user_input)
+
+        Animal.animal_death(victim, victim_player)
+        if victim.is_poisonous():
+            carnivorous.poison()
+        return 2
+
+    @staticmethod
+    def hunting(animal: Animal, player: Player, player_list: list, user_input=Functions.input_function):
         """
         hunting process
         animal: Animal instance
@@ -1834,31 +1899,41 @@ class Eating_Phase:
         """
         assert isinstance(animal, Animal), f'EatingPhase.hunting(): animal is not Animal instance'
         assert type(player_list) == list, f'EatingPhase.hunting(): player_list is not list is {type(player_list)}'
-        for player in player_list:
+        for _ in player_list:
             assert isinstance(player, Player), f'Eating_Phase.hunting(): {player} is no Player() instance'
         assert animal.can_hunt(), f'EatingPhase.hunting(): animal can not hunt'
         assert Functions.exist_animals_to_hunt(animal, player_list), f'EatingPhase.hunting(): there are not animals ' \
                                                                      f'to hunt'
-
+        assert isinstance(player, Player)
+        assert animal in player.get_player_animals()
 
         # choose animal to attack
 
         victim = Eating_Phase.choose_animal_to_attack(animal, player_list, user_input)
 
-        if victim == False:
+        while not victim:
             print('you can not attack this animal')
-            return False
+            victim = Eating_Phase.choose_animal_to_attack(animal, player_list, user_input)
 
-        # look for victim properties
+        mimicry_list = []
+        blue_fish = Eating_Phase.attack_function(victim, animal, player_list, mimicry_list, user_input)
 
-        if victim.is_tail_loss():
-            host_player = Animal.find_players_animal_belong(victim, player_list)
+        for food in range(blue_fish):
 
-            print(f'{host_player}, your animal has tail loss property - do you want to use it?')
-            choose = user_input(['y', 'Y', 'n', 'N'], 'use tail loss?')
-            if choose == 'y':
-                Eating_Phase.tail_loss_property(victim, ), P{}
+            # if animal is hungry
+            if animal.get_hungry() > 0:
+                animal.increase_blue_fish()
 
+            # if animal has free fat
+            elif animal.get_is_full_fat() > 0:
+                animal.increase_fat()
+
+        if blue_fish:    # if animal cooperation
+            if animal.get_cooperation():
+                Eating_Phase.cooperation(player, animal)
+
+
+        # todo scavenger property
 
 '''    
 
