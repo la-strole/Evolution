@@ -112,6 +112,25 @@ class Players:
         print(f'first player is {first_player.get_player_name()}')
         return first_player
 
+    @staticmethod
+    def get_player_from_list(players, user_input=Functions.input_function):
+        """
+        return player from players list, if list is empty - return False
+        """
+        assert type(players) == list
+        for player in players:
+            assert isinstance(player, Player)
+
+        if not players:
+            print('there are not players in list')
+            return False
+
+        for number, player in enumerate(players):
+            print(f'{number} {player}')
+
+        choose = user_input([str(x + 1) for x in range(len(players))], 'choose player:')
+
+        return players[int(choose) - 1]
 
 
 class Player:
@@ -285,6 +304,44 @@ class Animal:
         """
         return self.animal_id
 
+    def get_belong_to_player_id(self):
+        """
+        return player_id to which animal belongs: int
+        """
+        return self.belong_to_player
+
+    @ staticmethod
+    def animal_death(animal, player):
+        """
+        process of animals death
+        return None
+        """
+        assert isinstance(animal, Animal)
+        assert isinstance(player, Player)
+        assert animal in player.get_player_animals()
+
+
+
+        animal.alive = False
+        player.animals.remove(animal)
+
+        # delete all pair properties
+
+        if animal.get_communication():
+            for communicator in animal.get_communication():
+                communicator.communication.remove(animal)
+
+        if animal.get_cooperation():
+            for cooperator in animal.get_cooperation():
+                cooperator.cooperation.remove(animal)
+
+        for item in player.get_player_animals():
+            if animal in item.get_symbiosys():
+                item.symbiosys.remove(animal)
+
+
+
+
     def increase_red_fish(self, number=1):
         """
         increase red fish count on number - 1 by default
@@ -314,7 +371,6 @@ class Animal:
             assert 'carnivorous' not in self.get_single_animal_properties()
         elif property == 'carnivorous':
             assert 'scavenger' not in self.get_single_animal_properties()
-
 
         self.single_properties.append(property)
 
@@ -610,6 +666,12 @@ class Animal:
         else:
             return False
 
+    def is_poisoned(self):
+        """
+        returns if animal is poisoned
+        """
+        return self.poisoned
+
     def is_burrowing(self):
         """
         return: Bool - if animal has burrowing  property
@@ -805,6 +867,25 @@ class Animal:
             return False
 
         return True
+
+    @staticmethod
+    def find_players_animal_belong(animal, players_list: list):
+        """
+        return player to wich animal belong, or 'unknown_player' else
+        """
+        assert isinstance(animal, Animal)
+        assert type(players_list) == list
+        for player in players_list:
+            assert isinstance(player, Player)
+
+        player_id = animal.get_belong_to_player_id()
+
+        for player in players_list:
+            if player.get_player_id() == player_id:
+                assert animal in player.get_player_animals()
+                return player
+
+        return 'unknown_player'
 
 
 class Deck:
@@ -1065,19 +1146,11 @@ class Development_Phase:
             assert isinstance(player, Player), f'Development_Phase.make_parasite_property():' \
                                                f'{player} is not Player instance'
 
-        # print players
-        for number, player in enumerate(players_list):
-            print(f'{number + 1} {player.get_player_name()}')
+        # choose player
+        player = Players.get_player_from_list(players_list)
 
-        choose_player = user_input([str(x + 1) for x in range(len(players_list))], 'choose player: ')
-        player = players_list[int(choose_player) - 1]
-
-        if not player.get_player_animals():
-            print(f'this player ({player.get_player_name} has not animals')
-            return False
-
-        # print animals
-        print('animals to give parasite:')
+        # choose animals
+        print('animal to give parasite:')
         animal = player.get_player_animal(player, user_input)
 
         if 'parasite' in animal.get_single_animal_properties():
@@ -1509,9 +1582,11 @@ class Eating_Phase:
         # if animal communication
         if animal.get_communication() and eating_base > 0:
             eating_base = Eating_Phase.communication(player, animal, eating_base, user_input)
+
         # if animal cooperation
         if animal.get_cooperation():
             Eating_Phase.cooperation(player, animal, user_input)
+
         return eating_base
 
     @staticmethod
@@ -1604,19 +1679,13 @@ class Eating_Phase:
         assert Functions.exist_animals_to_hunt(animal, player_list), f'Eating_Phase.choose_animal_to_attack(): ' \
                                                                      f'there are not animals to attack'
 
-        # print players and their animals
-        for p_n, player in enumerate(player_list):
-            print('*' * 10)
-            print(f'{p_n + 1} {player.get_player_name()}\n')
-            for n, a in enumerate(player.get_player_animals()):
-                print(f'{n} {a}')
+        print('choose player, animal to hunt:')
+        player = Players.get_player_from_list(player_list, user_input)
+        victim = player.get_player_animal(player, user_input)
 
-        # choose player - animal pair to attack
-        choose_player = user_input([str(x + 1) for x in range(len(player_list))], f'choose number of player')
-        player = player_list[int(choose_player)]
-        choose_animal = user_input([str(x + 1) for x in range(len(player.get_player_animals()))],
-                                   f'choose animal number to kill')
-        victim = player.get_player_animals()[int(choose_animal)]
+        if victim == animal:
+            print('you can not attack yourself')
+            return False
 
         # if animal can kill victim - return victim, else return false
         if animal.can_attack(victim):
@@ -1728,10 +1797,32 @@ class Eating_Phase:
             print(f'you choose fat property')
             animal.remove_fat_card()
 
+    @staticmethod
+    def mimicry_property(animal: Animal, player: Player, user_input=Functions.input_function):
+        """
+        redirect attack from current animal to another animal in players hand
+        assume player haas more then 1 animals in his hand
+        return another animal
+        """
+        assert isinstance(animal, Animal)
+        assert isinstance(player, Player)
+        assert animal in player.get_player_animals()
+        assert 'mimicry' in animal.get_single_animal_properties()
+        assert len(player.get_player_animals()) >= 2
+
+        print('choose animal to redirect attack')
+        redirected_animal = player.get_player_animal(player, user_input)
+
+        while animal == redirected_animal:
+            print('you can not redirect attack to yourself. Choose another animal:')
+            redirected_animal = redirected_animal = player.get_player_animal(player, user_input)
+
+        return redirected_animal
+
 
 
     @staticmethod
-    def hunting(animal: Animal, player_list: list):
+    def hunting(animal: Animal, player_list: list, user_input=Functions.input_function):
         """
         hunting process
         animal: Animal instance
@@ -1739,7 +1830,7 @@ class Eating_Phase:
         assume animal is carnivorous
         assume animal can hunt
         assume there are animals to hunt
-        return: None
+        return: True you hunt, else - return False
         """
         assert isinstance(animal, Animal), f'EatingPhase.hunting(): animal is not Animal instance'
         assert type(player_list) == list, f'EatingPhase.hunting(): player_list is not list is {type(player_list)}'
@@ -1750,7 +1841,27 @@ class Eating_Phase:
                                                                      f'to hunt'
 
 
-'''
+        # choose animal to attack
+
+        victim = Eating_Phase.choose_animal_to_attack(animal, player_list, user_input)
+
+        if victim == False:
+            print('you can not attack this animal')
+            return False
+
+        # look for victim properties
+
+        if victim.is_tail_loss():
+            host_player = Animal.find_players_animal_belong(victim, player_list)
+
+            print(f'{host_player}, your animal has tail loss property - do you want to use it?')
+            choose = user_input(['y', 'Y', 'n', 'N'], 'use tail loss?')
+            if choose == 'y':
+                Eating_Phase.tail_loss_property(victim, ), P{}
+
+
+'''    
+
 
     def single_turn_eat(self, player, user_input=functions.input_function):
         """
