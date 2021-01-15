@@ -714,8 +714,10 @@ class TestEvolution(unittest.TestCase):
         def user_gen(answers):
             for answer in answers:
                 yield answer
+
         answers = ['y', '1']
         f = user_gen(answers)
+
         def user_input(*args):
             return next(f)
 
@@ -732,8 +734,10 @@ class TestEvolution(unittest.TestCase):
         def user_gen(answers):
             for answer in answers:
                 yield answer
+
         answers = ['y', '2']
         f = user_gen(answers)
+
         def user_input(*args):
             return next(f)
 
@@ -751,8 +755,10 @@ class TestEvolution(unittest.TestCase):
         def user_gen(answers):
             for answer in answers:
                 yield answer
+
         answers = ['y', '2']
         f = user_gen(answers)
+
         def user_input(*args):
             return next(f)
 
@@ -776,8 +782,10 @@ class TestEvolution(unittest.TestCase):
         def user_gen(answers):
             for answer in answers:
                 yield answer
+
         answers = ['y', '3']
         f = user_gen(answers)
+
         def user_input(*args):
             return next(f)
 
@@ -805,8 +813,10 @@ class TestEvolution(unittest.TestCase):
         def user_gen(answers):
             for answer in answers:
                 yield answer
+
         answers = ['y', '4']
         f = user_gen(answers)
+
         def user_input(*args):
             return next(f)
 
@@ -840,8 +850,10 @@ class TestEvolution(unittest.TestCase):
         def user_gen(answers):
             for answer in answers:
                 yield answer
+
         answers = ['y', '5']
         f = user_gen(answers)
+
         def user_input(*args):
             return next(f)
 
@@ -859,8 +871,10 @@ class TestEvolution(unittest.TestCase):
         def user_gen(answers):
             for answer in answers:
                 yield answer
+
         answers = ['y', '5']
         f = user_gen(answers)
+
         def user_input(*args):
             return next(f)
 
@@ -908,6 +922,181 @@ class TestEvolution(unittest.TestCase):
             module.Eating_Phase.tail_loss_property(animal)
             print(f'after: {animal.get_animal_properties()}')
 
+    def test_hunting(self):
+        """
+        unit test for hunting function
+        """
+
+        # male players list
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+
+        # assert there are not animals to hunt
+        self.assertRaises(AssertionError, module.Eating_Phase.hunting, player_hunter.get_player_animals()[0],
+                          player_hunter, player_list)
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[2].make_animal()
+        player_list[2].make_animal()
+
+        victim1 = player_hunter.get_player_animals()[1]
+        victim1.add_single_animal_property('high_body_weight')
+        victim2 = player_list[1].get_player_animals()[0]
+        victim2.add_single_animal_property('poisonous')
+        victim3 = player_list[2].get_player_animals()[0]
+        victim4 = player_list[2].get_player_animals()[1]
+
+        answers = ['1',  # choose first player to attack itself
+                   '1',  # choose as victim carnivorous ]
+                   '1',  # choose first player
+                   '2',  # choose victim1 which is high_body_weight
+                   '2',  # choose second player
+                   '1']  # choose victim2
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        # if carnivorous can not attack animal - choose another - look at text on console
+        # expect to see: you can not attack this animal
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(victim2.is_alive(), False)
+        self.assertEqual(carnivorous.get_hungry(), 0)
+        self.assertEqual(carnivorous.blue_fish_count, 2)
+        self.assertEqual(carnivorous.is_poisoned(), True)
+
+        # add communications, symbiosys, cooperations
+
+        # male players list
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+        carnivorous.increase_red_fish()
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+
+        victim1 = player_list[1].get_player_animals()[0]
+        victim2 = player_list[1].get_player_animals()[1]
+        victim3 = player_list[1].get_player_animals()[2]
+
+        victim1.add_symbiosys(victim2)
+        victim2.add_cooperation(victim1)
+        victim1.add_cooperation(victim2)
+        victim2.add_communication(victim3)
+        victim3.add_communication(victim2)
+
+        self.assertEqual(victim2 in victim1.get_symbiosys(), True)
+        self.assertEqual(victim2 in victim1.get_cooperation(), True)
+        self.assertEqual(victim2 in victim3.get_communication(), True)
+        self.assertEqual(victim1 in victim2.get_cooperation(), True)
+        self.assertEqual(victim3 in victim2.get_communication(), True)
+
+        answers = ['2',  # choose first player to attack itself
+                   '2']  # choose as victim carnivorous ]
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(victim2.is_alive(), False)
+        self.assertEqual(carnivorous.get_hungry(), 0)
+        self.assertEqual(carnivorous.blue_fish_count, 1)
+        self.assertEqual(carnivorous.is_poisoned(), False)
+        self.assertEqual(victim2 not in victim1.get_symbiosys(), True)
+        self.assertEqual(victim2 not in victim1.get_cooperation(), True)
+        self.assertEqual(victim2 not in victim3.get_communication(), True)
+        self.assertEqual(victim1 not in victim2.get_cooperation(), True)
+        self.assertEqual(victim3 not in victim2.get_communication(), True)
+
+        # scavenger test
+
+        # male players list
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+        carnivorous.increase_red_fish()
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+
+        hunter_scavenger = player_hunter.get_player_animals()[1]
+        victim1 = player_list[1].get_player_animals()[0]
+        victim2 = player_list[1].get_player_animals()[1]
+        victim3 = player_list[1].get_player_animals()[2]
+
+        hunter_scavenger.add_single_animal_property('scavenger')
+        victim3.add_single_animal_property('scavenger')
+
+        answers = ['2',  # choose first player to attack player[1]
+                   '2']  # choose as victim victim2 ]
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(hunter_scavenger.blue_fish_count, 1)
+        self.assertEqual(victim3.blue_fish_count, 0)
 
 if __name__ == '__main__':
     unittest.main()

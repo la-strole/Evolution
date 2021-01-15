@@ -126,7 +126,7 @@ class Players:
             return False
 
         for number, player in enumerate(players):
-            print(f'{number} {player}')
+            print(f'{number + 1} {player}')
 
         choose = user_input([str(x + 1) for x in range(len(players))], 'choose player:')
 
@@ -145,7 +145,7 @@ class Player:
         Player.player_id += 1
 
     def __str__(self):
-        return f'Player {self.name}\ncard_hand = {self.cards_hand}\nanimals = {self.animals}\n'
+        return f'Player {self.name}'
 
     def __repr__(self):
         return f'{self.get_player_name()}'
@@ -310,6 +310,12 @@ class Animal:
         """
         return self.belong_to_player
 
+    def is_alive(self):
+        """
+        return True if animal is alive (animal.alive == True) else - False
+        """
+        return self.alive
+
     @staticmethod
     def animal_death(animal, player):
         """
@@ -328,14 +334,17 @@ class Animal:
         if animal.get_communication():
             for communicator in animal.get_communication():
                 communicator.communication.remove(animal)
+            animal.communication = []
 
         if animal.get_cooperation():
             for cooperator in animal.get_cooperation():
                 cooperator.cooperation.remove(animal)
+            animal.cooperation = []
 
         for item in player.get_player_animals():
             if animal in item.get_symbiosys():
                 item.symbiosys.remove(animal)
+
 
     def increase_red_fish(self, number=1):
         """
@@ -775,7 +784,7 @@ class Animal:
     def add_cooperation(self, animal):
         """
         animal: Animal() instance
-        add cooperate to current animal, append it to animal.symbiont list
+        add cooperate to current animal, append it to animal.cooperate list
         return: None
         """
         assert isinstance(animal, Animal), f'Animal.add_cooperation(): {animal} is not instance of Animal class'
@@ -1599,7 +1608,7 @@ class Eating_Phase:
         take blue fish reduce hungry or increase fat
         make pair properties
         assume animal can eat
-        return None
+        return True if animal can take blue fish , else return False
         """
         assert isinstance(player, Player), f'Eating_phase.take_blue_fish(): {player} is not Player instance'
         assert isinstance(animal, Animal), f'Eating_phase.take_blue_fish(): {animal} is not Animal instance'
@@ -1611,14 +1620,20 @@ class Eating_Phase:
         # if animal is hungry
         if animal.get_hungry() > 0:
             animal.increase_blue_fish()
+            if animal.get_cooperation():
+                Eating_Phase.cooperation(player, animal)
+            return True
 
         # if animal has free fat
         elif animal.get_is_full_fat() > 0:
             animal.increase_fat()
+            if animal.get_cooperation():
+                Eating_Phase.cooperation(player, animal)
+            return True
 
-        # if animal cooperation
-        if animal.get_cooperation():
-            Eating_Phase.cooperation(player, animal)
+        return False
+
+
 
     @staticmethod
     def fat_to_blue_fish(animal: Animal, user_input=Functions.input_function):
@@ -1678,8 +1693,7 @@ class Eating_Phase:
             assert isinstance(player, Player), f'Eating_Phase.choose_animal_to_attack(): {player} is not Player() ' \
                                                f'instance'
         assert animal.can_hunt(), f'Eating_Phase.choose_animal_to_attack(): animal can not hunt'
-        assert Functions.exist_animals_to_hunt(animal, player_list), f'Eating_Phase.choose_animal_to_attack(): ' \
-                                                                     f'there are not animals to attack'
+
 
         print('choose player, animal to hunt:')
         player = Players.get_player_from_list(player_list, user_input)
@@ -1861,12 +1875,12 @@ class Eating_Phase:
         assert isinstance(victim, Animal)
         assert type(players) == list
         for _ in players:
-            assert isinstance(player, Player)
+            assert isinstance(_, Player)
         assert type(mimicry_list) == list
         assert isinstance(carnivorous, Animal)
 
         victim_player = Animal.find_players_animal_belong(victim, players)
-        print(f'{victim_player}, your animal is under attack!')
+        print(f'{victim_player.get_player_name()}, your animal is under attack!')
 
         if victim.is_running():
             result = Eating_Phase.running_property(victim, user_input)
@@ -1890,7 +1904,7 @@ class Eating_Phase:
     def scavenger_property(player_hunter: Player):
         """
         realise scavenger property
-        return None
+        return True if somebody can realize scavenger property else false
         """
         assert isinstance(player_hunter, Player)
         assert player_hunter in Players.get_player_list()
@@ -1898,13 +1912,24 @@ class Eating_Phase:
         # for current player
         for scavenger in player_hunter.get_player_animals():
             if scavenger.is_scavenger():
-                Eating_Phase.take_blue_fish(player_hunter, scavenger)
-            # for players clockwise
+                result = Eating_Phase.take_blue_fish(player_hunter, scavenger)
+                if result:
+                    print(f'scavenger {scavenger} took blue fish')
+                    return True
+
+        # for players clockwise
         player = Players.next_player(player_hunter)
         while player != player_hunter:
             for scavenger in player.get_player_animals():
                 if scavenger.is_scavenger():
-                    Eating_Phase.take_blue_fish(player, scavenger)
+                    result = Eating_Phase.take_blue_fish(player, scavenger)
+                    if result:
+                        print(f'scavenger {scavenger} took blue fish')
+                        return True
+            player = Players.next_player(player)
+
+
+        return False
 
     @staticmethod
     def hunting(carnivorous: Animal, player_hunter: Player, player_list: list, user_input=Functions.input_function):
