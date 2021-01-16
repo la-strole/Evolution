@@ -50,6 +50,17 @@ class Functions:
                         return True
         return False
 
+    @staticmethod
+    def any_in(a: list, b: list):
+        """
+        return True if any element from list a are in list b
+        assume a, b - lists
+        return bool
+        """""
+        assert type(a) == list
+        assert type(b) == list
+        return any(i in b for i in a)
+
 
 class Players:
     """
@@ -213,25 +224,37 @@ class Player:
         return self.animals.copy()
 
     @staticmethod
-    def get_player_animal(player, user_input=Functions.input_function):
+    def get_player_animal(player, user_input=Functions.input_function, list_of_animals=None):
         """
+        get animals from list of animals - by default - player.get_player_animals()
         player - Player instance
         assume player has animals
         user_input - function for test for test
         return: animal from player
         """
 
+        if list_of_animals is None:
+            list_of_animals = []
         assert isinstance(player, Player), f'Player.get_player_animal(): player is not Player instance'
         assert player.get_player_animals(), f'Player.get_player_animal(): player has not animals'
+        assert type(list_of_animals) == list
+        if list_of_animals:
+            for animal in list_of_animals:
+                assert isinstance(animal, Animal)
+                assert animal in player.get_player_animals()
+
         print(f'choose animal from player {player.get_player_name()}')
 
-        for number, animal in enumerate(player.get_player_animals()):
+        if not list_of_animals:
+            list_of_animals = player.get_player_animals()
+
+        for number, animal in enumerate(list_of_animals):
             print(f'{number + 1} {animal.get_animal_properties()}')
 
-        choose = user_input([str(x + 1) for x in range(len(player.get_player_animals()))],
+        choose = user_input([str(x + 1) for x in range(len(list_of_animals))],
                             'choose animal number')
 
-        return player.get_player_animals()[int(choose) - 1]
+        return list_of_animals[int(choose) - 1]
 
     def make_animal(self):
         """
@@ -269,6 +292,13 @@ class Player:
         return list of animals from player hand which can eat
         """
         return [animal for animal in self.get_player_animals() if animal.can_eat()]
+
+    def get_scavenger_animals(self):
+        """
+        return list of animals which are scavengers
+        """
+        result = [animal for animal in self.get_player_animals() if animal.is_scavenger()]
+        return result
 
 
 class Animal:
@@ -316,35 +346,33 @@ class Animal:
         """
         return self.alive
 
-    @staticmethod
-    def animal_death(animal, player):
+    def animal_death(self, player):
         """
         process of animals death
         return None
         """
-        assert isinstance(animal, Animal)
+        assert isinstance(self, Animal)
         assert isinstance(player, Player)
-        assert animal in player.get_player_animals()
+        assert self in player.get_player_animals()
 
-        animal.alive = False
-        player.animals.remove(animal)
+        self.alive = False
+        player.animals.remove(self)
 
         # delete all pair properties
 
-        if animal.get_communication():
-            for communicator in animal.get_communication():
-                communicator.communication.remove(animal)
-            animal.communication = []
+        if self.get_communication():
+            for communicator in self.get_communication():
+                communicator.remove_communication(self)
+            self.communication = []
 
-        if animal.get_cooperation():
-            for cooperator in animal.get_cooperation():
-                cooperator.cooperation.remove(animal)
-            animal.cooperation = []
+        if self.get_cooperation():
+            for cooperator in self.get_cooperation():
+                cooperator.remove_cooperation(self)
+            self.cooperation = []
 
         for item in player.get_player_animals():
-            if animal in item.get_symbiosys():
-                item.symbiosys.remove(animal)
-
+            if self in item.get_symbiosys():
+                item.remove_symbiosys(self)
 
     def increase_red_fish(self, number=1):
         """
@@ -1633,8 +1661,6 @@ class Eating_Phase:
 
         return False
 
-
-
     @staticmethod
     def fat_to_blue_fish(animal: Animal, user_input=Functions.input_function):
         """
@@ -1693,7 +1719,6 @@ class Eating_Phase:
             assert isinstance(player, Player), f'Eating_Phase.choose_animal_to_attack(): {player} is not Player() ' \
                                                f'instance'
         assert animal.can_hunt(), f'Eating_Phase.choose_animal_to_attack(): animal can not hunt'
-
 
         print('choose player, animal to hunt:')
         player = Players.get_player_from_list(player_list, user_input)
@@ -1859,7 +1884,7 @@ class Eating_Phase:
 
             while animal == redirected_animal:
                 print('you can not redirect attack to yourself. Choose another animal:')
-                redirected_animal = redirected_animal = player.get_player_animal(player, user_input)
+                redirected_animal = player.get_player_animal(player, user_input)
             mimicry_list.append(animal)
             return redirected_animal
 
@@ -1895,13 +1920,13 @@ class Eating_Phase:
             if result != False:
                 return Eating_Phase.attack_function(result, carnivorous, players, mimicry_list, user_input)
 
-        Animal.animal_death(victim, victim_player)
+        victim.animal_death(victim_player)
         if victim.is_poisonous():
             carnivorous.poison()
         return 2
 
     @staticmethod
-    def scavenger_property(player_hunter: Player):
+    def scavenger_property(player_hunter: Player, user_input=Functions.input_function):
         """
         realise scavenger property
         return True if somebody can realize scavenger property else false
@@ -1910,24 +1935,45 @@ class Eating_Phase:
         assert player_hunter in Players.get_player_list()
 
         # for current player
-        for scavenger in player_hunter.get_player_animals():
-            if scavenger.is_scavenger():
+        scavengers = player_hunter.get_scavenger_animals()
+        if scavengers and Functions.any_in(scavengers, player_hunter.get_can_eat_animals()):
+            if len(scavengers) == 1:
+                scavenger = scavengers[0]
                 result = Eating_Phase.take_blue_fish(player_hunter, scavenger)
                 if result:
-                    print(f'scavenger {scavenger} took blue fish')
+                    print(f'animal {scavenger} took blue fish as scavenger')
                     return True
-
+                else:
+                    raise ValueError
+            else:
+                while True:
+                    scavenger = player_hunter.get_player_animal(player_hunter, user_input, scavengers)
+                    result = Eating_Phase.take_blue_fish(player_hunter, scavenger)
+                    if result:
+                        print(f'animal {scavenger} took blue fish as scavenger')
+                        return True
         # for players clockwise
         player = Players.next_player(player_hunter)
         while player != player_hunter:
-            for scavenger in player.get_player_animals():
-                if scavenger.is_scavenger():
+            scavengers = player.get_scavenger_animals()
+            if scavengers and Functions.any_in(scavengers, player.get_can_eat_animals()):
+                if len(scavengers) == 1:
+                    scavenger = scavengers[0]
                     result = Eating_Phase.take_blue_fish(player, scavenger)
                     if result:
-                        print(f'scavenger {scavenger} took blue fish')
+                        print(f'animal {scavenger} took blue fish as scavenger')
                         return True
-            player = Players.next_player(player)
+                    else:
+                        raise ValueError
+                else:
+                    while True:
+                        scavenger = player.get_player_animal(player, user_input, scavengers)
+                        result = Eating_Phase.take_blue_fish(player, scavenger)
+                        if result:
+                            print(f'animal {scavenger} took blue fish as scavenger')
+                            return True
 
+            player = Players.next_player(player)
 
         return False
 
@@ -1983,7 +2029,7 @@ class Eating_Phase:
         # scavenger property
 
         if blue_fish == 2:  # if carnivorous kill victim
-            Eating_Phase.scavenger_property(player_hunter)
+            Eating_Phase.scavenger_property(player_hunter, user_input)
 
 
 '''    

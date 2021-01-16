@@ -1051,7 +1051,7 @@ class TestEvolution(unittest.TestCase):
 
         # scavenger test
 
-        # male players list
+        # make players list
         def user_input(*args):
             return '3'
 
@@ -1097,6 +1097,61 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(victim3.blue_fish_count, 0)
+
+
+        # if player_hunter's scavenger can not take blue_fish, and player2 has two scavengers
+        # and choose second
+
+        # make players list
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+        carnivorous.increase_red_fish()
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+
+        hunter_scavenger = player_hunter.get_player_animals()[1]
+        victim1 = player_list[1].get_player_animals()[0]
+        victim2 = player_list[1].get_player_animals()[1]
+        victim3 = player_list[1].get_player_animals()[2]
+
+        hunter_scavenger.add_single_animal_property('scavenger')
+        hunter_scavenger.to_hibernate()
+        victim2.add_single_animal_property('scavenger')
+        victim3.add_single_animal_property('scavenger')
+
+        answers = ['2',  # choose first player to attack player[1]
+                   '1',  # choose as victim victim1
+                   '2']  # choose scavenger to take blue fish victim3
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(hunter_scavenger.blue_fish_count, 0)
+        self.assertEqual(victim2.blue_fish_count, 0)
+        self.assertEqual(victim3.blue_fish_count, 1)
 
 if __name__ == '__main__':
     unittest.main()
