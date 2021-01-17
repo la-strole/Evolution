@@ -144,8 +144,6 @@ class Players:
         return players[int(choose) - 1]
 
 
-
-
 class Player:
     """ Player container of animals. """
     player_id = 0
@@ -1766,8 +1764,6 @@ class Eating_Phase:
         assert isinstance(animal, Animal), f'Eating_Phase.running_property(): animal is not animal instance'
         assert animal.is_running(), f'Eating_Phase.running_property(): animal has not running property'
 
-
-
         dice = randint(1, 6)
         print(f'you roll the dice - number is {dice}')
 
@@ -1775,8 +1771,6 @@ class Eating_Phase:
             return True
         else:
             return False
-
-
 
     @staticmethod
     def tail_loss_property(animal: Animal, user_input=Functions.input_function):
@@ -1887,7 +1881,6 @@ class Eating_Phase:
         assert animal in player.get_player_animals()
         assert 'mimicry' in animal.get_single_animal_properties()
         assert animal not in mimicry_list
-
 
         animals_to_redirect = player.get_animals_to_attack(carnivorous)
         # remove itself
@@ -2080,6 +2073,7 @@ class Eating_Phase:
 
         if blue_fish == 2:  # if carnivorous killed victim
             Eating_Phase.scavenger_property(player_hunter, user_input)
+
 
 
 '''    
