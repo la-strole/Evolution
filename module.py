@@ -28,7 +28,7 @@ class Functions:
             print('error than input, please, try again')
 
     @staticmethod
-    def exist_animals_to_hunt(animal, player_list: list):
+    def exist_animals_to_hunt(carnivorous, player_list: list):
         """
         return True if there are animals which <animal> can hunt
         else: return False
@@ -37,16 +37,16 @@ class Functions:
         assume animal can hunt
         """
 
-        assert isinstance(animal, Animal), f'exist_animals_to_hunt(): animal is not Animal() instance'
-        assert animal.can_hunt(), f"exist_animals_to_hunt(): animal can't hunt!"
+        assert isinstance(carnivorous, Animal), f'exist_animals_to_hunt(): animal is not Animal() instance'
+        assert carnivorous.can_hunt(), f"exist_animals_to_hunt(): animal can't hunt!"
         for player in player_list:
             assert isinstance(player, Player), f'exist_animals_to_hunt(): {player} in player_list is not Player() ' \
                                                f'instance'
 
         for player in player_list:
             for victim in player.get_player_animals():
-                if victim != animal:  # can not attack itself
-                    if animal.can_attack(victim, False):
+                if victim != carnivorous:  # can not attack itself
+                    if carnivorous.can_attack(victim, False):
                         return True
         return False
 
@@ -144,6 +144,8 @@ class Players:
         return players[int(choose) - 1]
 
 
+
+
 class Player:
     """ Player container of animals. """
     player_id = 0
@@ -221,6 +223,9 @@ class Player:
         """
         return player's animals list
         """
+        for animal in self.animals.copy():
+            assert animal.is_alive()
+
         return self.animals.copy()
 
     @staticmethod
@@ -254,7 +259,9 @@ class Player:
         choose = user_input([str(x + 1) for x in range(len(list_of_animals))],
                             'choose animal number')
 
-        return list_of_animals[int(choose) - 1]
+        animal = list_of_animals[int(choose) - 1]
+        assert animal.is_alive()
+        return animal
 
     def make_animal(self):
         """
@@ -298,6 +305,18 @@ class Player:
         return list of animals which are scavengers
         """
         result = [animal for animal in self.get_player_animals() if animal.is_scavenger()]
+        return result
+
+    def get_animals_to_attack(self, carnivorous):
+        """
+        return list of animals from player hand, wich carnivorous can attack (without carnivorous)
+        carnivorous - Animal()
+        """
+        assert isinstance(carnivorous, Animal)
+        assert carnivorous.can_hunt()
+
+        result = [victim for victim in self.get_player_animals() if carnivorous.can_attack(victim, False)]
+
         return result
 
 
@@ -357,6 +376,7 @@ class Animal:
 
         self.alive = False
         player.animals.remove(self)
+        print(f'animal {self}, died...')
 
         # delete all pair properties
 
@@ -1735,7 +1755,7 @@ class Eating_Phase:
             return False
 
     @staticmethod
-    def running_property(animal: Animal, user_input=Functions.input_function):
+    def running_property(animal: Animal):
         """
         if attacked by carnivorous animal is running - roll the dice 4,5,6 - survive
         animal - Animal() instance
@@ -1746,23 +1766,17 @@ class Eating_Phase:
         assert isinstance(animal, Animal), f'Eating_Phase.running_property(): animal is not animal instance'
         assert animal.is_running(), f'Eating_Phase.running_property(): animal has not running property'
 
-        choose = user_input(['Y', 'y', 'n', 'N'], f'your animal has running property Do you want to use it? y/n: ')
 
-        if choose == 'n':
+
+        dice = randint(1, 6)
+        print(f'you roll the dice - number is {dice}')
+
+        if dice in [4, 5, 6]:
+            return True
+        else:
             return False
 
-        elif choose == 'y':
 
-            dice = randint(1, 6)
-            print(f'you roll the dice - number is {dice}')
-
-            if dice in [4, 5, 6]:
-                return True
-            else:
-                return False
-
-        else:
-            raise ValueError
 
     @staticmethod
     def tail_loss_property(animal: Animal, user_input=Functions.input_function):
@@ -1860,41 +1874,76 @@ class Eating_Phase:
             raise ValueError
 
     @staticmethod
-    def mimicry_property(animal: Animal, player: Player, mimicry_list: list, user_input=Functions.input_function):
+    def mimicry_property(carnivorous: Animal, animal: Animal, player: Player, mimicry_list: list,
+                         user_input=Functions.input_function):
         """
         redirect attack from current animal to another animal in players hand
         assume player haas more then 1 animals in his hand
         return another animal or False
         """
         assert isinstance(animal, Animal)
+        assert isinstance(carnivorous, Animal)
         assert isinstance(player, Player)
         assert animal in player.get_player_animals()
         assert 'mimicry' in animal.get_single_animal_properties()
-        assert len(player.get_player_animals()) >= 2
+        assert animal not in mimicry_list
 
-        choose = user_input(['Y', 'y', 'n', 'N'], f'your animal has mimicry property. Do you want to use it? y/n: ')
 
-        if choose == 'n' or animal in mimicry_list:
+        animals_to_redirect = player.get_animals_to_attack(carnivorous)
+        # remove itself
+        animals_to_redirect.remove(animal)
+        # remove carnivorous
+        if carnivorous in animals_to_redirect:
+            animals_to_redirect.remove(carnivorous)
+        # remove mimicry list members (those, who already used mimicry property)
+        for item in mimicry_list:
+            if item in animals_to_redirect:
+                animals_to_redirect.remove(item)
+
+        if not animals_to_redirect:
             return False
 
-        elif choose == 'y':
-
-            print('choose animal to redirect attack')
-            redirected_animal = player.get_player_animal(player, user_input)
-
-            while animal == redirected_animal:
-                print('you can not redirect attack to yourself. Choose another animal:')
-                redirected_animal = player.get_player_animal(player, user_input)
-            mimicry_list.append(animal)
-            return redirected_animal
-
         else:
-            raise ValueError
+
+            choose = user_input(['Y', 'y', 'n', 'N'], f'your animal has mimicry property. Do you want to use it? y/n: ')
+
+            if choose == 'n':
+                return False
+
+            elif choose == 'y':
+
+                print('choose animal to redirect attack, you can choose only animal which carnivorous can attack')
+                redirected_animal = player.get_player_animal(player, user_input)
+
+                if redirected_animal == carnivorous:
+                    print(f'you can not redirect attack to your attacker!')
+                    return False
+
+                elif not carnivorous.can_attack(redirected_animal):
+                    print('carnivorous can not attack this animal. You can not use mimicry property')
+                    return False
+
+                elif redirected_animal == animal:
+                    print('you can not redirect attack to yourself. Choose another animal:')
+                    return False
+
+                elif redirected_animal in mimicry_list:
+                    print('you can not redirect attack to animal which already use mimicry redirection')
+                    return False
+
+                else:
+                    mimicry_list.append(animal)
+                    return redirected_animal
+
+            else:
+                raise ValueError
 
     @staticmethod
     def attack_function(victim: Animal, carnivorous: Animal, players: list, mimicry_list: list,
                         user_input=Functions.input_function):
         """
+        !recursive function at mimicry property!
+        assume carnivorous can attack victim
         return number of blue fish after carnivorous attack animal: int
         """
         assert isinstance(victim, Animal)
@@ -1903,21 +1952,22 @@ class Eating_Phase:
             assert isinstance(_, Player)
         assert type(mimicry_list) == list
         assert isinstance(carnivorous, Animal)
+        assert carnivorous.can_attack(victim)
 
         victim_player = Animal.find_players_animal_belong(victim, players)
         print(f'{victim_player.get_player_name()}, your animal is under attack!')
 
         if victim.is_running():
-            result = Eating_Phase.running_property(victim, user_input)
+            result = Eating_Phase.running_property(victim)
             if result:
                 return 0
         if victim.is_tail_loss():
             result = Eating_Phase.tail_loss_property(victim, user_input)
             if result:
                 return 1
-        if victim.is_mimicry():
-            result = Eating_Phase.mimicry_property(victim, victim_player, mimicry_list, user_input)
-            if result != False:
+        if victim.is_mimicry() and victim not in mimicry_list:
+            result = Eating_Phase.mimicry_property(carnivorous, victim, victim_player, mimicry_list, user_input)
+            if result != False:  # if result = redirected_animal
                 return Eating_Phase.attack_function(result, carnivorous, players, mimicry_list, user_input)
 
         victim.animal_death(victim_player)
@@ -2020,7 +2070,7 @@ class Eating_Phase:
             elif carnivorous.get_is_full_fat() > 0:
                 carnivorous.increase_fat()
 
-        # cooperation property
+        # cooperation property - only one blue fish
 
         if blue_fish:  # if animal cooperation
             if carnivorous.get_cooperation():
@@ -2028,7 +2078,7 @@ class Eating_Phase:
 
         # scavenger property
 
-        if blue_fish == 2:  # if carnivorous kill victim
+        if blue_fish == 2:  # if carnivorous killed victim
             Eating_Phase.scavenger_property(player_hunter, user_input)
 
 

@@ -3,7 +3,7 @@ import unittest
 import random
 from unittest.mock import patch
 from random import randint, sample
-from os import system
+import subprocess
 
 
 class TestEvolution(unittest.TestCase):
@@ -927,6 +927,7 @@ class TestEvolution(unittest.TestCase):
         unit test for hunting function
         """
 
+        # =============================================
         # male players list
         def user_input(*args):
             return '3'
@@ -984,6 +985,8 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(carnivorous.get_hungry(), 0)
         self.assertEqual(carnivorous.blue_fish_count, 2)
         self.assertEqual(carnivorous.is_poisoned(), True)
+
+        # ========================================================================
 
         # add communications, symbiosys, cooperations
 
@@ -1049,6 +1052,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(victim1 not in victim2.get_cooperation(), True)
         self.assertEqual(victim3 not in victim2.get_communication(), True)
 
+        # ============================================================================
         # scavenger test
 
         # make players list
@@ -1098,7 +1102,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(victim3.blue_fish_count, 0)
 
-
+        # =================================================================================
         # if player_hunter's scavenger can not take blue_fish, and player2 has two scavengers
         # and choose second
 
@@ -1152,6 +1156,339 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(hunter_scavenger.blue_fish_count, 0)
         self.assertEqual(victim2.blue_fish_count, 0)
         self.assertEqual(victim3.blue_fish_count, 1)
+
+        # ===================================================================================
+        # with mimicry and tail loss
+
+        # 1. victim1 mimicry to victim2. carnivorous can attack victim2
+        # make players list
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+
+        hunter_scavenger = player_hunter.get_player_animals()[1]
+        victim1 = player_list[1].get_player_animals()[0]
+        victim2 = player_list[1].get_player_animals()[1]
+        victim3 = player_list[1].get_player_animals()[2]
+
+        hunter_scavenger.add_single_animal_property('scavenger')
+        victim1.add_single_animal_property('mimicry')
+        victim2.add_single_animal_property('mimicry')
+        victim3.add_single_animal_property('mimicry')
+
+        answers = ['2',  # choose first player to attack player[1]
+                   '1',  # choose as victim victim1
+                   'y',  # choose victim1 use mimicry property
+                   '2',  # choose victim2 to redirect attack
+                   'n']  # victim2 do not want to redirect attack to victim3 and die
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(hunter_scavenger.blue_fish_count, 1)
+        self.assertEqual(carnivorous.blue_fish_count, 2)
+        self.assertEqual(victim2.is_alive(), False)
+        self.assertEqual(victim1.is_alive(), True)
+        self.assertEqual(victim3.is_alive(), True)
+
+        # 2. victim1 mimicry to victim2. carnivorous can NOT attack victim2
+
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+
+        hunter_scavenger = player_hunter.get_player_animals()[1]
+        victim1 = player_list[1].get_player_animals()[0]
+        victim2 = player_list[1].get_player_animals()[1]
+        victim3 = player_list[1].get_player_animals()[2]
+
+        hunter_scavenger.add_single_animal_property('scavenger')
+        victim1.add_single_animal_property('mimicry')
+        victim2.add_single_animal_property('mimicry')
+        victim2.add_single_animal_property('swimming')
+        victim3.add_single_animal_property('mimicry')
+
+        answers = ['2',  # choose first player to attack player[1]
+                   '1',  # choose as victim victim1
+                   'y',  # choose victim1 use mimicry property
+                   '2']  # choose victim2 to redirect attack
+
+        # 'n']  # victim2 do not want to redirect attack to victim3 and die
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(hunter_scavenger.blue_fish_count, 1)
+        self.assertEqual(carnivorous.blue_fish_count, 2)
+        self.assertEqual(victim2.is_alive(), True)
+        self.assertEqual(victim1.is_alive(), False)
+        self.assertEqual(victim3.is_alive(), True)
+
+        # 3. victim1 is only one animal
+
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+
+        hunter_scavenger = player_hunter.get_player_animals()[1]
+        victim1 = player_list[1].get_player_animals()[0]
+
+        hunter_scavenger.add_single_animal_property('scavenger')
+        victim1.add_single_animal_property('mimicry')
+
+        answers = ['2',  # choose first player to attack player[1]
+                   '1']  # choose as victim victim1
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(hunter_scavenger.blue_fish_count, 1)
+        self.assertEqual(carnivorous.blue_fish_count, 2)
+
+        self.assertEqual(victim1.is_alive(), False)
+
+        # 4 victim2 try to mimicry to victim1 wich already mimicried to victim2
+
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+
+        hunter_scavenger = player_hunter.get_player_animals()[1]
+        victim1 = player_list[1].get_player_animals()[0]
+        victim2 = player_list[1].get_player_animals()[1]
+        victim3 = player_list[1].get_player_animals()[2]
+
+        hunter_scavenger.add_single_animal_property('scavenger')
+        victim1.add_single_animal_property('mimicry')
+        victim2.add_single_animal_property('mimicry')
+        victim3.add_single_animal_property('mimicry')
+
+        answers = ['2',  # choose first player to attack player[1]
+                   '1',  # choose as victim victim1
+                   'y',  # choose victim1 use mimicry property
+                   '2',  # choose victim2 to redirect attack
+                   'y',  # victim2 want to redirect attack to victim1 and die
+                   '1']  # victim2 choose victim1 as redirected animal and die
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(hunter_scavenger.blue_fish_count, 1)
+        self.assertEqual(carnivorous.blue_fish_count, 2)
+        self.assertEqual(victim2.is_alive(), False)
+        self.assertEqual(victim1.is_alive(), True)
+        self.assertEqual(victim3.is_alive(), True)
+
+        # 5 victim2 try to mimicry to victim3 which carnivorous can attack
+
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+
+        hunter_scavenger = player_hunter.get_player_animals()[1]
+        victim1 = player_list[1].get_player_animals()[0]
+        victim2 = player_list[1].get_player_animals()[1]
+        victim3 = player_list[1].get_player_animals()[2]
+
+        hunter_scavenger.add_single_animal_property('scavenger')
+        victim1.add_single_animal_property('mimicry')
+        victim2.add_single_animal_property('mimicry')
+        victim3.add_single_animal_property('mimicry')
+
+        answers = ['2',  # choose first player to attack player[1]
+                   '1',  # choose as victim victim1
+                   'y',  # choose victim1 use mimicry property
+                   '2',  # choose victim2 to redirect attack
+                   'y',  # victim2 want to redirect attack to victim3
+                   '3']  # victim2 choose victim3 as redirected animal
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(hunter_scavenger.blue_fish_count, 1)
+        self.assertEqual(carnivorous.blue_fish_count, 2)
+        self.assertEqual(victim2.is_alive(), True)
+        self.assertEqual(victim1.is_alive(), True)
+        self.assertEqual(victim3.is_alive(), False)
+
+        # 6 victim2 try to mimicry to victim3 which carnivorous can  NOT attack
+
+        print('GGGG'* 100)
+        def user_input(*args):
+            return '3'
+
+        players = module.Players(user_input)
+        player_list = players.get_player_list()
+
+        # make player_hunter
+        player_hunter = player_list[0]
+
+        # make carnivorous
+        player_hunter.make_animal()
+        carnivorous = player_hunter.get_player_animals()[0]
+        carnivorous.add_single_animal_property('carnivorous')
+
+        # add animals to hunt
+
+        player_hunter.make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+        player_list[1].make_animal()
+
+        hunter_scavenger = player_hunter.get_player_animals()[1]
+        victim1 = player_list[1].get_player_animals()[0]
+        victim2 = player_list[1].get_player_animals()[1]
+        victim3 = player_list[1].get_player_animals()[2]
+        victim4 = player_list[1].get_player_animals()[3]
+
+        hunter_scavenger.add_single_animal_property('scavenger')
+        victim1.add_single_animal_property('mimicry')
+        victim2.add_single_animal_property('mimicry')
+        victim3.add_single_animal_property('mimicry')
+        victim3.add_single_animal_property('burrowing')
+        victim3.increase_red_fish()
+
+        answers = ['2',  # choose first player to attack player[1]
+                   '1',  # choose as victim victim1
+                   'y',  # choose victim1 use mimicry property
+                   '2',  # choose victim2 to redirect attack
+                   'y',  # victim2 want to redirect attack to victim3
+                   '3']  # victim2 choose victim3 as redirected animal and die
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), None)
+        self.assertEqual(hunter_scavenger.blue_fish_count, 1)
+        self.assertEqual(carnivorous.blue_fish_count, 2)
+        self.assertEqual(victim2.is_alive(), False)
+        self.assertEqual(victim1.is_alive(), True)
+        self.assertEqual(victim3.is_alive(), True)
 
 if __name__ == '__main__':
     unittest.main()
