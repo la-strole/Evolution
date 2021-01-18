@@ -292,11 +292,11 @@ class Player:
         """
         return len([grazing_animal for grazing_animal in self.get_player_animals() if grazing_animal.is_grazing()])
 
-    def get_can_eat_animals(self):
+    def get_can_take_fish_animals(self):
         """
-        return list of animals from player hand which can eat
+        return list of animals from player hand which can take red or blue fish
         """
-        return [animal for animal in self.get_player_animals() if animal.can_eat()]
+        return [animal for animal in self.get_player_animals() if animal.can_take_fish()]
 
     def get_scavenger_animals(self):
         """
@@ -314,6 +314,15 @@ class Player:
         assert carnivorous.can_hunt()
 
         result = [victim for victim in self.get_player_animals() if carnivorous.can_attack(victim, False)]
+
+        return result
+
+    def get_can_eat_animals(self):
+        """
+        returns list of animals which can eat (are hungry, not full fat, has not hungry symbiosys and not in hibernate
+                                               or has fat and not in hibernate state)
+        """
+        result = [animal for animal in self.get_player_animals() if animal.can_eat()]
 
         return result
 
@@ -887,7 +896,7 @@ class Animal:
         self.cooperation.remove(cooperator)
         cooperator.cooperation.remove(self)
 
-    def can_eat(self):
+    def can_take_fish(self):
         """
         Returns True if animal is hungry, or is free fat slots, and it's symbionts are not hungry,
                      and it is not in hibernation status
@@ -899,12 +908,28 @@ class Animal:
             return True
         return False
 
+    def can_eat(self):
+        """
+        returns True if animal is hungry or has free fat slots and has not hungry symbiosys or has fat cards ,
+        is not in hibernate status
+        else: return False
+        using in player.get_can_eat for eating phase function
+        """
+        if (self.get_hungry() > 0 or self.get_is_full_fat() > 0) \
+                and not self.is_hibernate() \
+                and not self.exist_hungry_symbiosys():
+            return True
+        elif self.get_fat() and not self.is_hibernate():
+            return True
+        else:
+            return False
+
     def can_hunt(self):
         """
         return True if animal can hunt (is carnivorous, can eat)
         else return False
         """
-        if self.is_carnivorous() and self.can_eat():
+        if self.is_carnivorous() and self.can_take_fish():
             return True
         return False
 
@@ -1500,7 +1525,7 @@ class Eating_Phase:
         communicative_relationships = []
         #  initialize for first animal with hungry/ not full fat communicative animals
         for item in animal.get_communication():
-            if item.can_eat():
+            if item.can_take_fish():
                 if item not in communicative_relationships:
                     communicative_relationships.append(item)
         took_red_fish = []
@@ -1510,7 +1535,8 @@ class Eating_Phase:
             # base case:
 
             if eating_base == 0 \
-                    or not (set(communicative_relationships) - set(took_red_fish)) <= set(player.get_can_eat_animals()) \
+                    or not (set(communicative_relationships) - set(took_red_fish)) <= set(
+                player.get_can_take_fish_animals()) \
                     or (len(took_red_fish) == len(communicative_relationships)):
                 return eating_base
             else:
@@ -1520,7 +1546,7 @@ class Eating_Phase:
                 else:
                     # 2. ask player what animal should take  the red fish
                     to_choose_list = [x for x in communicative_relationships if (x not in took_red_fish) and (
-                        x.can_eat())]
+                        x.can_take_fish())]
                     for number, _ in enumerate(to_choose_list):
                         print(f'{number + 1}: = {_}')
 
@@ -1545,7 +1571,7 @@ class Eating_Phase:
 
                 if animal_to_take.get_communication():
                     for item in animal_to_take.get_communication():
-                        if item.can_eat():
+                        if item.can_take_fish():
                             if item not in communicative_relationships:
                                 if item == first_animal and len(took_red_fish) == 1:
                                     continue
@@ -1576,7 +1602,7 @@ class Eating_Phase:
         cooperative_relationships = []
         #  initialize for first animal with hungry/ not full fat / not hungry symbiosys cooperative animals
         for item in animal.get_cooperation():
-            if item.can_eat():
+            if item.can_take_fish():
                 if item not in cooperative_relationships:
                     cooperative_relationships.append(item)
         took_blue_fish = []
@@ -1585,7 +1611,7 @@ class Eating_Phase:
         def recursive_find_cooperate(animal: Animal, user_input):
             # base case:
 
-            if not (set(cooperative_relationships) - set(took_blue_fish)) <= set(player.get_can_eat_animals()) \
+            if not (set(cooperative_relationships) - set(took_blue_fish)) <= set(player.get_can_take_fish_animals()) \
                     or (len(took_blue_fish) == len(cooperative_relationships)):
                 return None
 
@@ -1597,7 +1623,7 @@ class Eating_Phase:
                 else:
                     # 2. ask player what animal should take  the red fish
                     to_choose_list = [x for x in cooperative_relationships if (x not in took_blue_fish) and (
-                        x.can_eat())]
+                        x.can_take_fish())]
                     for number, _ in enumerate(to_choose_list):
                         print(f'{number + 1}: = {_}')
 
@@ -1620,7 +1646,7 @@ class Eating_Phase:
 
                 if animal_to_take.get_cooperation():
                     for item in animal_to_take.get_cooperation():
-                        if item.can_eat():
+                        if item.can_take_fish():
                             if item not in cooperative_relationships:
                                 if item == first_animal and len(took_blue_fish) == 1:
                                     continue
@@ -1651,9 +1677,9 @@ class Eating_Phase:
         assert animal in player.get_player_animals(), f'Eating_phase.take_red_fish(): {animal} is not in players hand'
         assert type(eating_base) == int, f'Eating_phase.take_red_fish(): {eating_base} is not integer'
         assert eating_base > 0, f'Eating_phase.take_red_fish(): {eating_base} <= 0'
-        assert animal.can_eat(), f'Eating_phase.take_red_fish(): {animal} can not eat ' \
-                                 f'(hungry={animal.get_hungry()}, free_Fat={animal.get_is_full_fat()},' \
-                                 f'hungry_symbiosys={animal.exist_hungry_symbiosys()}))'
+        assert animal.can_take_fish(), f'Eating_phase.take_red_fish(): {animal} can not eat ' \
+                                       f'(hungry={animal.get_hungry()}, free_Fat={animal.get_is_full_fat()},' \
+                                       f'hungry_symbiosys={animal.exist_hungry_symbiosys()}))'
 
         eating_base -= 1
         # if animal is hungry
@@ -1687,9 +1713,9 @@ class Eating_Phase:
         assert isinstance(player, Player), f'Eating_phase.take_blue_fish(): {player} is not Player instance'
         assert isinstance(animal, Animal), f'Eating_phase.take_blue_fish(): {animal} is not Animal instance'
         assert animal in player.get_player_animals(), f'Eating_phase.take_blue_fish(): {animal} is not in players hand'
-        assert animal.can_eat(), f'Eating_phase.take_blue_fish(): {animal} can not eat ' \
-                                 f'(hungry={animal.get_hungry()}, free_Fat={animal.get_is_full_fat()},' \
-                                 f'hungry_symbiosys={animal.exist_hungry_symbiosys()}))'
+        assert animal.can_take_fish(), f'Eating_phase.take_blue_fish(): {animal} can not eat ' \
+                                       f'(hungry={animal.get_hungry()}, free_Fat={animal.get_is_full_fat()},' \
+                                       f'hungry_symbiosys={animal.exist_hungry_symbiosys()}))'
 
         # if animal is hungry
         if animal.get_hungry() > 0:
@@ -2007,7 +2033,7 @@ class Eating_Phase:
 
         # for current player
         scavengers = player_hunter.get_scavenger_animals()
-        if scavengers and Functions.any_in(scavengers, player_hunter.get_can_eat_animals()):
+        if scavengers and Functions.any_in(scavengers, player_hunter.get_can_take_fish_animals()):
             if len(scavengers) == 1:
                 scavenger = scavengers[0]
                 result = Eating_Phase.take_blue_fish(player_hunter, scavenger)
@@ -2027,7 +2053,7 @@ class Eating_Phase:
         player = Players.next_player(player_hunter)
         while player != player_hunter:
             scavengers = player.get_scavenger_animals()
-            if scavengers and Functions.any_in(scavengers, player.get_can_eat_animals()):
+            if scavengers and Functions.any_in(scavengers, player.get_can_take_fish_animals()):
                 if len(scavengers) == 1:
                     scavenger = scavengers[0]
                     result = Eating_Phase.take_blue_fish(player, scavenger)
@@ -2128,7 +2154,7 @@ class Eating_Phase:
         for player in players_list:
             assert isinstance(player, Player)
 
-        if not pirate.can_eat() or \
+        if not pirate.can_take_fish() or \
                 not animals_to_piracy or \
                 pirate in animals_used_piracy or \
                 (len(animals_to_piracy) == 1 and pirate in animals_to_piracy):
@@ -2166,270 +2192,44 @@ class Eating_Phase:
 
             return True
 
-
-
-'''    
-
-
-    def single_turn_eat(self, player, user_input=functions.input_function):
+    def eating_function(self, animals_previous_hiberated: list, eating_base: int, is_last_turn=False,
+                        user_input=Functions.input_function):
         """
-        realize single turn of eating for player - Player() of eating phaze
-        assume: Player has animals that can eat
-        player: Player() instance
-        user_input - function (for test, by default - function.input_function)
+        realise eating_function
+        return True - if there are not errors , else - return False
         """
+        assert type(eating_base) == int
+
+        list_of_pass = set()
+
+        animals_to_piracy = []
+        animals_used_piracy = []
+        animals_used_hunt = []
+
+        player = Players.first_number_player
         assert isinstance(player, Player)
-        assert functions.exist_can_eat_animals(player.get_player_animals()), f'Eating_Phase.single_turn():' \
-                                                                             f'there are not animals witch can eat ' \
-                                                                             f'from these player (assume they would be)'
-        print(f'{"-" * 10}active player - {player.get_player_name()} {"-" * 10}')
-
-        active_player_hungry_animals = player.get_hungry_animals()
-        active_player_not_full_fat = player.get_not_full_fat()
-        active_player_piracy_animals = player.get_piracy()
-        active_player_hubernation_ability = player.get_to_hibernation()
-        active_player_in_hiberantion = player.get_in_hibernation()
 
 
-        animals = player.get_player_animals()
-        for number, animal in enumerate(animals):
-            print(f'{number + 1}: {animal}')
-        while True:  # choose loop
-            animal_num = user_input([str(x + 1) for x in range(len(animals))],
-                                    f'Please, select animal to take red fish from eating base: ')
-            animal = animals[int(animal_num) - 1]
-            if not animal.can_eat():
-                print('this animal can not eat, please, choose another animal')
-                continue  # choose loop
+        # while len(list_of_pass) != Plyers.get_players_len()
+        if not player.get_can_eat_animals():
+
+            if player.get_grazing_count() > 0 and eating_base > 0:
+                print(f'player {player}! You have not animal which can eat, but you can realize grazing property '
+                      f'(now or later) or say Pass for this turn of eating phase'
+                      f'eating base = {eating_base}')
+                choose = user_input(['y', 'Y', 'n', 'N'], 'do you want to use grazing property? y/n '
+                                                          'or say pass (pass): ')
+                if choose == 'y':
+                    eating_base = Eating_Phase.grazing_function(player, eating_base, user_input)
+                elif choose == 'pass':
+                    list_of_pass.add(player)
             else:
-                break # choose loop
+                list_of_pass.add(player)
+            player = Players.next_player(player)
+            # continue
 
 
 
-
-    def single_round_eating(self, players, active_player):
-        """
-        realize single round of eating phaze
-        players: list - list of Players()
-        active_player - Player() instance of first player
-        """
-        assert type(players) == list, f'Eating_Phase.single_round_eating(): players are not list'
-        for player in players:
-            assert isinstance(player, Player), f'Eating_Phase.single_round_eating(): {player} is not Player() instance'
-        assert isinstance(active_player, Player), f'Eating_Phase.single_round_eating(): ' \
-                                                  f'{active_player} is not Player() instance'
-        assert active_player in players, f'Eating_Phase.single_round_eating(): {active_player} is not players list'
-        list_of_round_pass = []
-        list_of_hungry_to_piracy = []  # list of animals, who take food in this turn but still are hungry
-
-    def eating_phase(self, user_input=functions.input_function):
-        """
-        return None
-        """
-        active_player = self.players[self.first_player]
-        list_of_pass = []  # list of players who say pass
-        l
-        # todo try to realize single round (whitout while main loop) realize function can eat - for animal with fat hungry symbiosys, not hebirnate
-        while True:  # main loop
-            # print(f'TEST list of pass = {list_of_pass}')
-            if len(list_of_pass) == len(self.players):
-                # todo make text end of this phase
-                print('TEST - end of phaza eating')
-                break  # main loop
-            if active_player in list_of_pass:
-                continue  # main loop
-            print(f'{"-" * 10}active player - {active_player.get_player_name()} {"-" * 10}')
-            active_player_hungry_animals = active_player.get_hungry_animals()
-            active_player_not_full_fat = active_player.get_not_full_fat()
-            active_player_grazing_number = active_player.get_grazing_count()
-            active_player_in_hibernation = active_player.get_in_hibernation()
-            active_player_symbiosus =
-            # if all of his animals are not hungry or fat (if yes - grazing function and active_player = next_player)
-            if len(active_player_hungry_animals) == 0 and len(active_player_not_full_fat) == 0:
-                if active_player_grazing_number > 0 and self.eating_base > 0:
-                    answer = user_input(['y', 'Y', 'n', 'N'], f'All of your animals are not hungry and '
-                                                              f'full of fat. Do you want to use grazing '
-                                                              f'property of your animals to destroy eating'
-                                                              f' base {self.eating_base}? y/n ')
-                    if answer == 'y':
-                        self.grazing_function(active_player, user_input)
-                        active_player = self.players[functions.next_player(self.players.index(active_player),
-                                                                           self.players)]
-                        continue  # main loop
-                    else:
-                        active_player = self.players[functions.next_player(self.players.index(active_player),
-                                                                           self.players)]
-                        continue  # main loop
-                else:  # if not grazing animals on players hand or eating base = 0 - next player, automatic pass
-                    list_of_pass.append(active_player)
-                    active_player = self.players[functions.next_player(self.players.index(active_player), self.players)]
-                    continue  # main loop
-            else:
-                # not all animals are not hungry or enough fat
-                # don't forget about symbiosysy!
-                # 1. take red fish
-                # 2. hunting
-                # 3. piracy
-                # 4. hibernation
-                # 5. say pass
-                print(f'This animals are hungry or have free fat slots:')
-                active_player_can_eat = set(active_player_hungry_animals + active_player_not_full_fat)
-                for animal in active_player_can_eat:
-                    print(f'{active_player.get_player_animals().index(animal) + 1} {animal}')
-                # if player want to take red fish from eating base or say pass or play property
-                choose_list = ['take', 'pass']
-                if active_player.get_carnivorous_to_hunt():
-                    choose_list.append('hunt')
-                if list_of_hungry_to_piracy and active_player.get_piracy():
-                    choose_list.append('piracy')
-                if active_player.get_to_hibernation():
-                    choose_list.append('hibernation')
-
-                answer = user_input(choose_list, f'Now you have to take red fish from eating base '
-                                                 f'({self.eating_base} or do else functions, depending of'
-                                                 f" your animals property: {', '.join(choose_list)}")
-                if answer == 'take':
-
-                    self.take_red_fish(active_player)
-                    if active_player_grazing_number > 0 and self.eating_base > 0:
-                        answer = user_input(['y', 'Y', 'n', 'N'],
-                                            'Do you want to use grazing property of your animals to '
-                                            f'destroy eating base {self.eating_base}? y/n ')
-                        if answer == 'y':
-                            self.grazing_function(active_player)
-                    active_player = self.players[functions.next_player(self.players.index(active_player), self.players)]
-                    continue  # main loop
-                if answer == 'pass':
-                    list_of_pass.append(active_player)
-                    active_player = self.players[functions.next_player(self.players.index(active_player), self.players)]
-                    continue  # main loop
-
-                # todo adding simb to property list vzai - id symb id + 1
-
-        # if all
-        # animals of all players - or end of red fish and and hunting, piracy, hibernation or all said pass
-        # end of this phase
-
-        # 1. grazing (+) take red fish
-        # hunting without taking red fish
-        # check if scavenger is present
-        # piracy without taking red fish
-        # hibernation - without taking red fish
-        # choose animal to take red fish
-        # hunting
-        # grazing function
-        # twice properties -
-        # fat card - to eat (it is not red or blue fish)
-
-#  it global variable + I change name of thi function + I think that it is poor design to pass argument with the same
-#  name... OMG - really shitcode...
-
-
-
-
-
-def phase_eating(players, first_player_number, red_fish_count):
-    """ realize eating phase players - players with animals"""
-    player_number = first_player_number
-    if players and isinstance(players, list):
-        if not players[player_number].animals:
-            print(f"error - this player ({players[player_number].name}) has not any animals")
-            return -1
-        else:
-            stop_this_round_list = []  # for exit from below while 1 - if len of this list == len players_list
-            while 1:  # main loop
-                if len(stop_this_round_list) == len(players):
-                    break
-                # make list of hungry animals of active player
-                hungry_animal = [hungry_animal for hungry_animal in players[player_number].animals if
-                                 hungry_animal.hungry > 0]
-                # make list of fat and hungry animal
-                not_enough_fat_animal = [animal for animal in players[player_number] if
-                                         animal.fat_cards_count - animal.fat > 0]
-                # make list of carnivorous
-                carnivorous = [animal for animal in players[player_number] if animal.carnivorous]
-                if hungry_animal or not_enough_fat_animal:
-                    print(f"active player - {players[player_number].name}")
-                    print("you have hungry animals")
-                    print(f"your hungry animals:")
-                    hungry_not_en_fat_set = list(set(hungry_animal + not_enough_fat_animal))
-                    for number, animal in enumerate(hungry_not_en_fat_set):
-                        print(f"{number + 1} animal, property: {animal.property}, hungry = {animal.hungry} "
-                              f"fat = {animal.fat} fat cards = {animal.fat_cards_count})")
-                    print(f"food base = {red_fish_count}")
-                    # if so bad - neither carnivorous nor grazing - actually nothing to do on this turn
-
-                    if not carnivorous and players[player_number].grazing_count == 0 and red_fish_count == 0:
-                        # if there are hungry or not enough fat and red fih doesn't exist
-                        print(f"ou, you have hungry animals, but they can't eat...")
-                        stop_this_round_list.append(players[player_number])
-                        player_number = next_player
-                        continue
-                    # do you want to use grazing property
-                    elif players[player_number].grazing_count > 0:
-                        print(f"you have grazing property and can destroy {players[player_number].grazing_count} red "
-                              f"fishes from red fish base ({red_fish_count})")
-                        while 1:
-                            choose = input(f"you have animals with grazing property - do you want to use this\n"
-                                           f"property to destroy red fish in food base={red_fish_count} y/n?")
-                            if choose == 'y' or 'Y':
-                                grazing_process()
-                                break
-                            elif choose == 'n' or 'N':
-                                break
-                            else:
-                                print("please, type only n or y - try again")
-                                continue
-
-                    # choose hungry animal or say pass
-                    print("now you can choose your hungry animal or say PASS")
-                    while 1:
-                        choose = input(f"please choose what animal do you want to give food? or type 'p' - say pass")
-                        if choose == 'p' or 'P':
-                            player_number = next_player(player_number)
-                            break
-                        else:
-                            animal_id = int(choose) - 1
-                            # TODO STAY HERE
-                            if isinstance(animal_id, int) and 0 <= animal_id < len(hungry_not_en_fat_set):
-                                current_animal = hungry_not_en_fat_set[animal_id]
-                                break
-                            else:
-                                print("something wrong with animal number - try again")
-                                continue
-                    # to say PASS
-                    if choose == 'p' or 'P':
-                        continue  # main loop
-                    # if current animal is carnivores and there are red fish
-                    if current_animal.carnivores and red_fish_count > 0:
-                        print(f"your animal is carnivores. Do you want to use this property and try to kill or you want"
-                              f"to take red fish from red fish base = {red_fish_count}? C/R?")
-                        while 1:
-                            choose = input()
-                            if choose == 'C' or 'c':
-                                carnivorous_eating_process(current_animal)
-                                break
-                            elif choose == "r" or "R":
-                                eating_from_red_fih_base()
-                            else:
-                                print("something wrong with your input. please try r or c")
-                                continue
-
-
-
-                else:
-                    # all animals of this active player are not hungry and are enough fat
-                    # TODO make here posobility of topotun proprety
-                    stop_this_round_list.append(players_list(player_number))
-                    player_number = next_player(player_number)
-            print(f"end of eating phase")
-
-
-
-    else:
-        print(f"error! trouble with players_list in faza pit function")
-        return -1
-'''
 
 if __name__ == "__main__":
 
