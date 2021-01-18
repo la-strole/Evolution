@@ -398,11 +398,39 @@ class Animal:
         """
         self.red_fish_count += number
 
+    def get_red_fish(self):
+        """
+        return int - red fish count
+        """
+        return self.red_fish_count
+
+    def reduce_red_fish(self, number=1):
+        """
+        reduce red fish on number (1 by default)
+        """
+        assert self.get_red_fish() >= number
+
+        self.red_fish_count -= number
+
     def increase_blue_fish(self, number=1):
         """
         increase blue fish count on number - 1 by default
         """
         self.blue_fish_count += number
+
+    def get_blue_fish(self):
+        """
+        return int - blue fish count
+        """
+        return self.blue_fish_count
+
+    def reduce_blue_fish(self, number=1):
+        """
+        reduce blue fish on number (1 by default)
+        """
+        assert self.get_blue_fish() >= number
+
+        self.blue_fish_count -= number
 
     def add_single_animal_property(self, property: str):
         """
@@ -2073,6 +2101,70 @@ class Eating_Phase:
 
         if blue_fish == 2:  # if carnivorous killed victim
             Eating_Phase.scavenger_property(player_hunter, user_input)
+
+    @staticmethod
+    def piracy_property(pirate: Animal, animals_to_piracy: list, animals_used_piracy: list, players_list: list,
+                        user_input=Functions.input_function):
+        """
+        realise piracy property
+        pirate - Animal()
+        animals_to_piracy - list of animals which already got red/blue fish in this turn, but still are hungry
+        animals_used_piracy - list of animals which already used piracy property in this turn
+        players_list - list of players
+        assume pirate can eat
+        assume pirate do not try to use piracy property on itself
+        return True - if animal use piracy property - else return False
+        """
+
+        assert 'piracy' in pirate.get_single_animal_properties()
+        assert isinstance(pirate, Animal)
+        assert type(animals_to_piracy) == list
+        assert type(animals_used_piracy) == list
+        assert type(players_list) == list
+        for animal in animals_used_piracy:
+            assert isinstance(animal, Animal)
+        for animal in animals_used_piracy:
+            assert isinstance(animal, Animal)
+        for player in players_list:
+            assert isinstance(player, Player)
+
+        if not pirate.can_eat() or \
+                not animals_to_piracy or \
+                pirate in animals_used_piracy or \
+                (len(animals_to_piracy) == 1 and pirate in animals_to_piracy):
+            return False
+
+        else:
+            print(f'{pirate} is pirate.')
+            choose = user_input(['y', 'Y', 'n', 'N'], 'Do you want to use piracy property? y/n: ')
+            if choose == 'n':
+                return False
+            elif choose == 'y':
+                print('choose an animal to steal red/blue fish. The animal must receive fish this turn, but not be fed')
+                player = Players.get_player_from_list(players_list, user_input)
+                animal = player.get_player_animal(player, user_input)
+                if animal == pirate:
+                    print(f'You can not steal food from yourself!')
+                    return False
+                elif animal not in animals_to_piracy:
+                    print(f'You can not steal food from this animal!')
+                    return False
+                else:
+                    if animal.get_blue_fish():
+                        animal.reduce_blue_fish()
+                    elif animal.get_red_fish():
+                        animal.reduce_red_fish()
+                    else:
+                        raise ValueError
+                    result = Eating_Phase.take_blue_fish(pirate.find_players_animal_belong(pirate, players_list),
+                                                         pirate)
+                    if not result:
+                        return False
+
+            else:
+                raise ValueError
+
+            return True
 
 
 
