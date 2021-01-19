@@ -230,40 +230,7 @@ class TestEvolution(unittest.TestCase):
         print(f'animal_v_1: {animal_v_1.get_animal_properties()}')
         print(f'animal_v_2: {animal_v_2.get_animal_properties()}')
 
-    def test_init_Eating_Phase(self):
-        """
-        unit test for Eating_Phase constructor
-        """
-        # player not a list (int instead)
-        self.assertRaises(AssertionError, module.Eating_Phase, players=1, first_number_player=0,
-                          eating_base=5)
-        # len of players < 1
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player()], first_number_player=0,
-                          eating_base=5)
-        # len of players > 8
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player() for x in range(9)],
-                          first_number_player=0, eating_base=5)
-        # not all players instances of Player() class
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player(), 1], first_number_player=0,
-                          eating_base=5)
-        # first number is no int type
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
-                          first_number_player='1', eating_base=5)
-        # first number < 0
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
-                          first_number_player=-1, eating_base=5)
-        # first number == 0
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
-                          first_number_player=0, eating_base=5)
-        # first number > len(players)
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
-                          first_number_player=3, eating_base=5)
-        # eating base not int type
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
-                          first_number_player=1, eating_base='5')
-        # eating base < 0
-        self.assertRaises(AssertionError, module.Eating_Phase, players=[module.Player, module.Player()],
-                          first_number_player=1, eating_base=-1)
+
 
     def test_get_grazing_count(self):
         """
@@ -304,20 +271,17 @@ class TestEvolution(unittest.TestCase):
         for i in range(5):
             players[0].animals.append(grazing_animal)
         # instance of eating Phase class
-        eating_phase = module.Eating_Phase(players=players, first_number_player=players[0], eating_base=5)
+        eating_phase = module.Eating_Phase(eating_base=5, hibernate_list=[])
         # eating base < 0
         eating_phase.eating_base = 0
-        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0], eating_phase.eating_base)
-        # player has not grazing animals
-        eating_phase.eating_base = 5
-        self.assertRaises(AssertionError, eating_phase.grazing_function, players[1], eating_phase.eating_base)
+        self.assertRaises(AssertionError, eating_phase.grazing_function, eating_phase.eating_base, 2)
         # destroy  elements > of eating base
         eating_phase.eating_base = 5
-        self.assertRaises(ValueError, eating_phase.grazing_function, players[0], eating_phase.eating_base,
+        self.assertRaises(ValueError, eating_phase.grazing_function, eating_phase.eating_base, 2,
                           test_input1)
         # destroy 2 elements of red fish
         eating_phase.eating_base = 5
-        eating_phase.eating_base = eating_phase.grazing_function(players[0], eating_phase.eating_base, test_input2)
+        eating_phase.eating_base = eating_phase.grazing_function(eating_phase.eating_base, 2, test_input2)
         self.assertEqual(eating_phase.eating_base, 3)
 
     def test_communication(self):
