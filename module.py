@@ -20,7 +20,7 @@ class Functions:
                 char) == str, f'input_function(alternatives, greeting: str): alternatives ({char}) not from strings'
         assert type(greeting) == str, f'input_function(alternatives, greeting: str): greeting ({greeting})is not string'
         assert len(alternatives) >= 1, f'input_function(alternatives, greeting: str): len(alternatives)<1 ' \
-                                       f'({len(alternatives)}'
+                                       f'({len(alternatives)})'
         while True:
             result = input(greeting)
             if result in alternatives:
@@ -53,7 +53,7 @@ class Functions:
     @staticmethod
     def any_in(a: list, b: list):
         """
-        return True if any element from list a are in list b
+        return True if at least one element from list a are in list b
         assume a, b - lists
         return bool
         """""
@@ -64,7 +64,7 @@ class Functions:
     @staticmethod
     def any_not_in(a: list, b: list):
         """
-        return True if at leat one element from list a are NOT in list b
+        return True if at least one element from list a are NOT in list b
         assume a, b - lists
         return bool
         """
@@ -164,6 +164,20 @@ class Players:
         for player in players_list:
             for animal in player.get_player_animals():
                 if (animal.get_red_fish() > 0 or animal.get_blue_fish() > 0) and animal.get_hungry() > 0:
+                    result.append(animal)
+
+        return result
+
+    @staticmethod
+    def get_alive_animals(player_list):
+        """
+        return alive animals (then carnivorous can try hunt)
+        """
+        result = []
+
+        for player in player_list:
+            for animal in player.get_player_animals():
+                if animal.is_alive():
                     result.append(animal)
 
         return result
@@ -332,6 +346,9 @@ class Player:
         at the begin of all eating phase
         """
         self.trampled_fish = number
+
+    def increase_trampled_fish(self, number=1):
+        self.trampled_fish += number
 
     def get_can_take_fish_animals(self):
         """
@@ -1512,12 +1529,15 @@ class Eating_Phase:
         self.animals_used_piracy = []
         self.animals_used_hunt = []
 
+        self.player = Players.first_number_player
+        self.player_list = Players.get_player_list()
+
         # set trampled fish to zero for all players for grazing property
         for player in Players.get_player_list():
             player.set_trampled_fish(0)
 
     @staticmethod
-    def grazing_function(eating_base: int, number: int, user_input=Functions.input_function):
+    def grazing_function(player: Player, eating_base: int, number: int, user_input=Functions.input_function):
         """
         player: Player instance
         change eating_base: int
@@ -1528,6 +1548,7 @@ class Eating_Phase:
 
         assert eating_base > 0, f'Eating_Phase.grazing_function() - self.eating base <= 0'
         assert number > 0, f'Eating_Phase.grazing_function() - number of animals with grazing property - 0'
+
         if number < eating_base:
             end_number = number
         else:
@@ -1540,6 +1561,7 @@ class Eating_Phase:
         else:
             print(f'Eating_phase.grazing_function(): destroy number > eating base')
             raise ValueError
+        player.increase_trampled_fish(int(destroy_number))
         print(f'new eating base = {eating_base}')
         return eating_base
 
@@ -2130,16 +2152,13 @@ class Eating_Phase:
         assume animal is carnivorous
         assume animal can hunt
         assume there are animals to hunt
-        return: None
+        return: True if carnivorous attacked victim , else return false
         """
         assert isinstance(carnivorous, Animal), f'EatingPhase.hunting(): animal is not Animal instance'
         assert type(player_list) == list, f'EatingPhase.hunting(): player_list is not list is {type(player_list)}'
         for _ in player_list:
             assert isinstance(player_hunter, Player), f'Eating_Phase.hunting(): {player_hunter} is no Player() instance'
         assert carnivorous.can_hunt(), f'EatingPhase.hunting(): animal can not hunt'
-        assert Functions.exist_animals_to_hunt(carnivorous,
-                                               player_list), f'EatingPhase.hunting(): there are not animals ' \
-                                                             f'to hunt'
         assert isinstance(player_hunter, Player)
         assert carnivorous in player_hunter.get_player_animals()
 
@@ -2147,33 +2166,36 @@ class Eating_Phase:
 
         victim = Eating_Phase.choose_animal_to_attack(carnivorous, player_list, user_input)
 
-        while not victim:
+        if not victim:
             print('you can not attack this animal')
-            victim = Eating_Phase.choose_animal_to_attack(carnivorous, player_list, user_input)
+            return False
 
-        mimicry_list = []
-        blue_fish = Eating_Phase.attack_function(victim, carnivorous, player_list, mimicry_list, user_input)
+        else:
+            mimicry_list = []
+            blue_fish = Eating_Phase.attack_function(victim, carnivorous, player_list, mimicry_list, user_input)
 
-        for food in range(blue_fish):
+            for food in range(blue_fish):
 
-            # if animal is hungry
-            if carnivorous.get_hungry() > 0:
-                carnivorous.increase_blue_fish()
+                # if animal is hungry
+                if carnivorous.get_hungry() > 0:
+                    carnivorous.increase_blue_fish()
 
-            # if animal has free fat
-            elif carnivorous.get_is_full_fat() > 0:
-                carnivorous.increase_fat()
+                # if animal has free fat
+                elif carnivorous.get_is_full_fat() > 0:
+                    carnivorous.increase_fat()
 
-        # cooperation property - only one blue fish
+            # cooperation property - only one blue fish
 
-        if blue_fish:  # if animal cooperation
-            if carnivorous.get_cooperation():
-                Eating_Phase.cooperation(player_hunter, carnivorous)
+            if blue_fish:  # if animal cooperation
+                if carnivorous.get_cooperation():
+                    Eating_Phase.cooperation(player_hunter, carnivorous)
 
-        # scavenger property
+            # scavenger property
 
-        if blue_fish == 2:  # if carnivorous killed victim
-            Eating_Phase.scavenger_property(player_hunter, user_input)
+            if blue_fish == 2:  # if carnivorous killed victim
+                Eating_Phase.scavenger_property(player_hunter, user_input)
+
+            return True
 
     @staticmethod
     def piracy_property(pirate: Animal, animals_to_piracy: list, players_list: list,
@@ -2205,237 +2227,190 @@ class Eating_Phase:
         player = Players.get_player_from_list(players_list, user_input)
         animal = player.get_player_animal(player, user_input)
 
-        while animal == pirate:
+        if animal == pirate:
             print(f'You can not steal food from yourself!')
-            animal = player.get_player_animal(player, user_input)
+            return False
 
-        while animal not in animals_to_piracy:
+        elif animal not in animals_to_piracy:
             print(f'You can not steal food from this animal!')
-            animal = player.get_player_animal(player, user_input)
-
-        if animal.get_blue_fish():
-            animal.reduce_blue_fish()
-        elif animal.get_red_fish():
-            animal.reduce_red_fish()
+            return False
         else:
-            raise ValueError
+            if animal.get_blue_fish():
+                animal.reduce_blue_fish()
+            elif animal.get_red_fish():
+                animal.reduce_red_fish()
+            else:
+                raise ValueError
 
-        Eating_Phase.take_blue_fish(pirate.find_players_animal_belong(pirate, players_list), pirate)
+            Eating_Phase.take_blue_fish(pirate.find_players_animal_belong(pirate, players_list), pirate)
+            return True
 
-    def eating_phase_turn(self, player: Player, eating_base: int, user_input, is_last_turn):
+    def make_buttons_for_animal(self, context, buttons: dict, eating_base: int, animals_to_piracy: list):
         """
-        Recursion here - in function case_next_player() and in line 2431 (than player has not animals to eat)
+        context - (animal, player, players_list) tuple
+        buttons - look at eating phase turn
+
+        """
+        animal, player, players_list, history = context
+
+        # pass
+        if not (eating_base > 0 and player.get_hungry_animals() and 'take red fish' not in history):
+            buttons['pass'] = True
+
+        # next player
+        if not (eating_base > 0 and player.get_hungry_animals() and
+                Functions.any_not_in(['take red fish', 'hunt', 'fat change', 'piracy', 'hibernate', 'grazing'],
+                                     history)):
+            buttons['next player'] = True
+
+        # take red fish
+        if eating_base > 0 and animal.can_take_fish() and \
+                not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing', 'take red fish'],
+                                     history):
+            buttons['take red fish'] = True
+
+        # hunt
+        if animal.can_hunt() and animal not in self.animals_used_hunt and \
+                len(Players.get_alive_animals(players_list)) > 1 \
+                and not Functions.any_in(['take red fish', 'fat change', 'piracy', 'hibernate', 'grazing', 'hunt'],
+                                         history):
+            buttons['hunt'] = True
+
+        # fat_change
+        if animal.get_hungry() > 0 and animal.get_fat() > 0 and \
+                not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing', 'take red fish'],
+                                     history):
+            buttons['fat change'] = True
+
+        # hibernate
+        if animal.can_hibernate() and animal not in self.hibernate_list and \
+                not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing'], history):
+            buttons['hibernate'] = True
+
+        # piracy
+        if animal.is_piracy() and animal not in self.animals_used_piracy and animal.can_take_fish() and \
+                animals_to_piracy and \
+                not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing'], history):
+
+            if len(animals_to_piracy) == 1 and animal in animals_to_piracy:
+                buttons['piracy'] = False
+            else:
+                buttons['piracy'] = True
+
+        # grazing
+        if player.get_grazing_count() - player.get_trampled_fish() > 0 and \
+                not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing'], history):
+            buttons['grazing'] = True
+
+        # another animal
+        if any([item for item in player.get_player_animals() if item.can_eat()]) and \
+                not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing', 'take red fish'],
+                                     history):
+            if len(player.get_player_animals()) > 1:
+                buttons['another animal'] = True
+
+        return buttons
+
+    def eating_phase(self, user_input=Functions.input_function):
+        """
         base case - if all players says pass (self.list_of_pass)
         return None
         """
 
-        assert isinstance(player, Player)
+        print('*******************Eating phase*************************')
+        player = self.player
 
-        assert type(eating_base) == int
+        while len(self.list_of_pass) != len(Players.get_player_list()):  # main loop
 
-        def case_grazing(self, user_input):
-            animal_used_grazing.append(animal)
-            self.eating_base = Eating_Phase.grazing_function(self.eating_base, player.get_grazing_count() -
-                                                             player.get_trampled_fish(), user_input)
-            case = []
-            if animal not in animal_took_red_fish:
-                case.append('take red fish')
-            if animal not in self.animals_used_hunt:
-                case.append('hunt')
-            if animal not in animal_changed_fat:
-                case.append('fat change')
-            if animal not in self.list_of_pass:
-                case.append('pass')
-            if animal not in self.hibernate_list and animal not in self.new_hibernate_list:
-                case.append('hibernate')
-            if animal not in self.animals_used_piracy:
-                case.append('piracy')
-            case.append('next player')
-
-            choose = user_input(case, f"choose what to do: {', '.join(case)}")
-
-            if choose == 'take red fish':
-                case_take_red_fish(self)
-            elif choose == 'hunt':
-                case_hunt(self)
-            elif choose == 'fat change':
-                case_fat_change(self)
-            elif choose == 'pass':
-                case_pass(self)
-            elif choose == 'hibernate':
-                case_hibernate(self)
-            elif choose == 'piracy':
-                case_piracy(self)
-            elif choose == 'next player':
-                case_next_player(self)
-            else:
-                raise ValueError
-
-        def case_next_player(self):
-            """
-            ! recursive run eating_phase_turn!
-            add animals to animals to pirate
-            """
-            next_player = Players.next_player(player)
-            self.eating_phase_turn(next_player, eating_base, user_input, is_last_turn)
-
-        def case_piracy(self):
-            Eating_Phase.piracy_property(animal, animals_to_piracy, Players.get_player_list())
-            self.animals_used_piracy.append(animal)
-
-            case = []
-            if player.get_grazing_count() - player.get_trampled_fish() > 0 and animal not in animal_used_grazing:
-                case.append('grazing')
-            if animal not in animal_took_red_fish:
-                case.append('take red fish')
-            case.append('next player')
-
-            choose = user_input(case, f"choose what to do: {', '.join(case)}")
-
-            if choose == 'grazing':
-                case_grazing(self, user_input)
-            elif choose == 'next player':
-                case_next_player(self)
-            elif choose == 'take red fish':
-                case_take_red_fish(self)
-            else:
-                raise ValueError
-
-        def case_hibernate(self):
-
-            animal.to_hibernate()
-            self.new_hibernate_list.append(animal)
-
-            case = []
-            if player.get_grazing_count() - player.get_trampled_fish() > 0 and animal not in animal_used_grazing:
-                case.append('grazing')
-            case.append('next player')
-
-            choose = user_input(case, f"choose what to do: {', '.join(case)}")
-
-            if choose == 'grazing':
-                case_grazing(self, user_input)
-            elif choose == 'next player':
-                case_next_player(self)
-            else:
-                raise ValueError
-
-        def case_take_red_fish(self):
-            self.eating_base = Eating_Phase.take_red_fish(player, animal, self.eating_base, user_input)
-            animal_took_red_fish.append(animal)
-
-            case = []
-            if animal.is_piracy() and \
-                    animals_to_piracy and \
-                    animal not in self.animals_used_piracy and \
-                    not (len(animals_to_piracy) == 1 and animal in animals_to_piracy):
-                case.append('piracy')
-            if player.get_grazing_count() - player.get_trampled_fish() > 0 and animal not in animal_used_grazing:
-                case.append('grazing')
-            case.append('next player')
-
-            choose = user_input(case, f"choose what to do: {', '.join(case)}")
-
-            if choose == 'piracy':
-                case_piracy(self)
-            elif choose == 'grazing':
-                case_grazing(self, user_input)
-            elif choose == 'next player':
-                case_next_player(self)
-            else:
-                raise ValueError
-
-        def case_pass(self):
-            self.list_of_pass.add(player)
-            case = []
-            if player.get_grazing_count() - player.get_trampled_fish() > 0 and animal not in animal_used_grazing:
-                case.append('grazing')
-            case.append('next player')
-
-            choose = user_input(case, f"choose what to do: {', '.join(case)}")
-
-            if choose == 'grazing':
-                case_grazing(self, user_input)
-            elif choose == 'next player':
-                case_next_player(self)
-            else:
-                raise ValueError
-
-        def case_fat_change(self):
-            Eating_Phase.fat_to_blue_fish(animal, user_input)
-            animal_changed_fat.append(animal)
-
-            case = []
-            if player.get_grazing_count() - player.get_trampled_fish() > 0 and animal not in animal_used_grazing:
-                case.append('grazing')
-            case.append('next player')
-
-            choose = user_input(case, f"choose what to do: {', '.join(case)}")
-
-            if choose == 'grazing':
-                case_grazing(self, user_input)
-            elif choose == 'next player':
-                case_next_player(self)
-            else:
-                raise ValueError
-
-        def case_hunt(self):
-            self.animals_used_hunt.append(animal)
-            Eating_Phase.hunting(animal, player, Players.get_player_list())
-
-            case = []
-            if player.get_grazing_count() - player.get_trampled_fish() > 0 and animal not in animal_used_grazing:
-                case.append('grazing')
-            case.append('next player')
-
-            choose = user_input(case, f"choose what to do: {', '.join(case)}")
-
-            if choose == 'grazing':
-                case_grazing(self, user_input)
-            elif choose == 'next player':
-                case_next_player(self)
-            else:
-                raise ValueError
-
-        # BASE CASE OF RECURSION
-        if self.list_of_pass == len(Players.get_player_list()):
-            return None
-
-        if player in self.list_of_pass:
-            case_next_player(self)
-
-        animal_took_red_fish = []
-        animal_changed_fat = []
-        animal_used_grazing = []
-        animals_to_piracy = Players.get_animals_for_piracy(Players.get_player_list())
-
-        # if there are not animals that can eat
-        if not player.get_can_eat_animals():
-
-            case = []
-            if player.get_grazing_count() - player.get_trampled_fish() > 0 and \
-                    Functions.any_not_in(player.get_player_animals(), animal_used_grazing):
-                case.append('grazing')
-            case.append('pass')
-
-            choose = user_input(case, f"choose what to do: {', '.join(case)}")
-
-            if choose == 'grazing':
-                self.eating_base = Eating_Phase.grazing_function(self.eating_base, player.get_grazing_count() -
-                                                                 player.get_trampled_fish(), user_input)
-            elif choose == 'pass':
+            if not player.get_can_eat_animals() and player.get_grazing_count() == 0:
                 self.list_of_pass.add(player)
-                # RECURSION
-                self.eating_phase_turn(Players.next_player(player), self.eating_base, user_input)
 
-        # if there are animals that can eat
-        else:
-            # select animal from player hand
-            animal = player.get_player_animal(player, user_input)
+            if player in self.list_of_pass:
+                player = Players.next_player(player)
+                continue  # main loop
 
-            # choosen animal can not eat
-            if not animal.can_eat():
-                pass
+            buttons_template = {'pass': False, 'next player': False, 'take red fish': False, 'hunt': False,
+                                'fat change': False, 'hibernate': False, 'piracy': False, 'grazing': False,
+                                'another animal': False}
+
+            history = []
+
+            animals_to_piracy = Players.get_animals_for_piracy(self.player_list)
+
+            # if there are not animals that can eat but has grazing animals
+            if not player.get_can_eat_animals() and player.get_grazing_count():
+                animal = player.get_player_animals()[0]
+
+            # if there are animals that can eat
+            else:
+                # select animal from player hand
+                animal = player.get_player_animal(player, user_input)
+
+            while 1:  # loop choose
+                context = (animal, player, self.player_list, history)
+                buttons = self.make_buttons_for_animal(context, buttons_template.copy(), self.eating_base,
+                                                       animals_to_piracy)
+
+                variants = [button for button in buttons.keys() if buttons[button]]
+                choose = user_input(variants, f'What do you want? {variants}: ')
+
+                if choose == 'pass':
+                    history.append(choose)
+                    self.list_of_pass.add(player)
+                    player = Players.next_player(player)
+                    break  # choose loop
+
+                elif choose == 'next player':
+                    history.append(choose)
+                    player = Players.next_player(player)
+                    break  # choose loop
+
+                elif choose == 'take red fish':
+                    history.append(choose)
+                    self.eating_base = Eating_Phase.take_red_fish(player, animal, self.eating_base, user_input)
+                    continue  # choose loop
+
+                elif choose == 'hunt':
+                    result = Eating_Phase.hunting(animal, player, self.player_list)
+                    if result:
+                        history.append(choose)
+                        self.animals_used_hunt.append(animal)
+                        continue  # choose loop
+                    else:
+                        print('hunt was not successful')
+                        continue  # choose loop
+
+                elif choose == 'fat change':
+                    history.append(choose)
+                    Eating_Phase.fat_to_blue_fish(animal, user_input)
+                    continue  # choose loop
+
+                elif choose == 'hibernate':
+                    history.append(choose)
+                    animal.to_hibernate()
+                    self.new_hibernate_list.append(animal)
+
+                elif choose == 'piracy':
+                    result = Eating_Phase.piracy_property(animal, animals_to_piracy, Players.get_player_list())
+                    if result:
+                        history.append(choose)
+                        self.animals_used_piracy.append(animal)
+                        continue  # choose loop
+                    else:
+                        print('piracy was not successful')
+                        continue  # choose loop
+
+                elif choose == 'grazing':
+                    history.append(choose)
+                    self.eating_base = Eating_Phase.grazing_function(player, self.eating_base,
+                                                                     player.get_grazing_count() -
+                                                                     player.get_trampled_fish(), user_input)
+                    continue  # choose loop
+
+                elif choose == 'another animal':
+                    history = []
+                    animal = player.get_player_animal(player)
+                    continue  # choose loop
 
 
 if __name__ == "__main__":
@@ -2452,3 +2427,11 @@ if __name__ == "__main__":
     define_eating_base_phase = Define_Eating_Base_Phase(players.get_players_number())
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())
+    eating_phase = Eating_Phase(food, [])
+    eating_phase.eating_phase()
+
+    # fir test
+    for player in players.get_player_list():
+        print(f'PLAYER {player}')
+        for animal in player.get_player_animals():
+            print(f'ANIMAL {animal}')

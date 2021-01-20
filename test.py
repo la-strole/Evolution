@@ -274,14 +274,14 @@ class TestEvolution(unittest.TestCase):
         eating_phase = module.Eating_Phase(eating_base=5, hibernate_list=[])
         # eating base < 0
         eating_phase.eating_base = 0
-        self.assertRaises(AssertionError, eating_phase.grazing_function, eating_phase.eating_base, 2)
+        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0], eating_phase.eating_base, 2)
         # destroy  elements > of eating base
         eating_phase.eating_base = 5
-        self.assertRaises(ValueError, eating_phase.grazing_function, eating_phase.eating_base, 2,
+        self.assertRaises(ValueError, eating_phase.grazing_function, players[0], eating_phase.eating_base, 2,
                           test_input1)
         # destroy 2 elements of red fish
         eating_phase.eating_base = 5
-        eating_phase.eating_base = eating_phase.grazing_function(eating_phase.eating_base, 2, test_input2)
+        eating_phase.eating_base = eating_phase.grazing_function(players[0], eating_phase.eating_base, 2, test_input2)
         self.assertEqual(eating_phase.eating_base, 3)
 
     def test_communication(self):
@@ -1456,3 +1456,5 @@ class TestEvolution(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+# todo rewrite test for gunting and piracy - changed
