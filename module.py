@@ -2254,7 +2254,9 @@ class Eating_Phase:
         animal, player, players_list, history = context
 
         # pass
-        if not (eating_base > 0 and player.get_hungry_animals() and 'take red fish' not in history):
+        if eating_base > 0 and player.get_hungry_animals():
+            buttons['pass'] = False
+        else:
             buttons['pass'] = True
 
         # next player

@@ -1479,4 +1479,3 @@ class TestEvolution(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
-# todo rewrite test for gunting and piracy - changed
