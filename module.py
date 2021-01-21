@@ -2258,10 +2258,7 @@ class Eating_Phase:
             buttons['pass'] = True
 
         # next player
-        if not (eating_base > 0 and player.get_hungry_animals() and
-                Functions.any_not_in(['take red fish', 'hunt', 'fat change', 'piracy', 'hibernate', 'grazing'],
-                                     history)):
-            buttons['next player'] = True
+        buttons['next player'] = True
 
         # take red fish
         if eating_base > 0 and animal.can_take_fish() and \
@@ -2303,9 +2300,7 @@ class Eating_Phase:
             buttons['grazing'] = True
 
         # another animal
-        if any([item for item in player.get_player_animals() if item.can_eat()]) and \
-                not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing', 'take red fish'],
-                                     history):
+        if not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing', 'take red fish'], history):
             if len(player.get_player_animals()) > 1:
                 buttons['another animal'] = True
 
