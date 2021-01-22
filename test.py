@@ -26,6 +26,7 @@ class TestEvolution(unittest.TestCase):
 
         return players
 
+    '''
     def test_Functions_exist_animals_to_hunt(self):
         """
         unit test for Functions_exist_animals_to_hunt()
@@ -272,14 +273,14 @@ class TestEvolution(unittest.TestCase):
         eating_phase = module.Eating_Phase(eating_base=5, hibernate_list=[])
         # eating base < 0
         eating_phase.eating_base = 0
-        self.assertRaises(AssertionError, eating_phase.grazing_function, players[0], eating_phase.eating_base, 2)
+        self.assertRaises(AssertionError, eating_phase.grazing_function, eating_phase.eating_base, 2)
         # destroy  elements > of eating base
         eating_phase.eating_base = 5
-        self.assertRaises(ValueError, eating_phase.grazing_function, players[0], eating_phase.eating_base, 2,
+        self.assertRaises(ValueError, eating_phase.grazing_function, eating_phase.eating_base, 2,
                           test_input1)
         # destroy 2 elements of red fish
         eating_phase.eating_base = 5
-        eating_phase.eating_base = eating_phase.grazing_function(players[0], eating_phase.eating_base, 2, test_input2)
+        eating_phase.eating_base = eating_phase.grazing_function(eating_phase.eating_base, 2, test_input2)
         self.assertEqual(eating_phase.eating_base, 3)
 
     def test_communication(self):
@@ -967,7 +968,6 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(carnivorous.blue_fish_count, 2)
         self.assertEqual(carnivorous.is_poisoned(), True)
 
-
         # ========================================================================
 
         # add communications, symbiosys, cooperations
@@ -1087,7 +1087,6 @@ class TestEvolution(unittest.TestCase):
         # =================================================================================
         # if player_hunter's scavenger can not take blue_fish, and player2 has two scavengers
         # and choose second
-
 
         # make players list
         def user_input(*args):
@@ -1414,7 +1413,6 @@ class TestEvolution(unittest.TestCase):
 
         # 6 victim2 try to mimicry to victim3 which carnivorous can  NOT attack
 
-
         def user_input(*args):
             return '3'
 
@@ -1472,10 +1470,76 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(victim2.is_alive(), False)
         self.assertEqual(victim1.is_alive(), True)
         self.assertEqual(victim3.is_alive(), True)
+    '''
 
+    def test_eating_phase_function(self):
+        """
+        unit test for eating phase function
+        """
 
+        # 1 make players
+        def user_input(*args):
+            return '2'
+
+        players = module.Players(user_input)
+
+        mitja = players.first_number_player
+        mitja.name = 'mitja'
+        vanja = players.get_player_list()[0] if players.get_player_list()[0] != mitja else players.get_player_list()[1]
+        vanja.name = 'vanja'
+        # 2 make animals
+
+        for i in range(3):
+            mitja.make_animal()
+        for i in range(2):
+            vanja.make_animal()
+
+        # make animal properties
+        mitja.get_player_animals()[0].add_single_animal_property('carnivorous')
+        mitja.get_player_animals()[0].add_single_animal_property('poisonous')
+
+        vanja.get_player_animals()[0].add_communication(vanja.get_player_animals()[1])
+        vanja.get_player_animals()[1].add_communication(vanja.get_player_animals()[0])
+        vanja.get_player_animals()[1].add_single_animal_property('camouflage')
+        vanja.get_player_animals()[1].add_single_animal_property('grazing')
+        vanja.get_player_animals()[1].add_fat_card()
+
+        answers = ['2',  # mitja choose second animal
+                   'take red fish',  # take red fish
+                   'next player',
+                   '1',  # vanja choose first animal
+                   'take red fish',  #
+                   'grazing',
+                   '1',  # number of grazing
+                   'next player',
+                   '1',  # mitja choose first animal
+                   'hunt',
+                   '2',  # mitja choose player 2 - vanja to attack
+                   '1',  # mitja attacj vanjas animal
+                   'next player',
+                   '1',  # vanja choose animal
+                   'take red fish',
+                   'grazing',
+                   '1',
+                   'next player',
+                   '3',
+                   'pass']  # eating base is empty
+
+        def user_gen(answers):
+            for answer in answers:
+                yield answer
+
+        f = user_gen(answers)
+
+        def user_input(*args):
+            return next(f)
+
+        eating_base = 6
+
+        Eating_phase = module.Eating_Phase(eating_base, [])
+
+        self.assertEqual(Eating_phase.eating_phase(user_input), None)
 
 
 if __name__ == '__main__':
     unittest.main()
-

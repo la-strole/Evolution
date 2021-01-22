@@ -193,7 +193,7 @@ class Player:
         self.player_id = Player.player_id
         self.name = Player.player_id  # by default
         Player.player_id += 1
-        self.trampled_fish = 0
+
 
     def __str__(self):
         return f'Player {self.name}'
@@ -331,24 +331,6 @@ class Player:
         number of players animals with grazing property
         """
         return len([grazing_animal for grazing_animal in self.get_player_animals() if grazing_animal.is_grazing()])
-
-    def get_trampled_fish(self):
-        """
-        returns int - number of trampled fish with grazing property - it can not be more than grazing max count
-        in eating phase property
-        """
-
-        return self.trampled_fish
-
-    def set_trampled_fish(self, number=0):
-        """
-        set trampled fish (zero by default)
-        at the begin of all eating phase
-        """
-        self.trampled_fish = number
-
-    def increase_trampled_fish(self, number=1):
-        self.trampled_fish += number
 
     def get_can_take_fish_animals(self):
         """
@@ -1532,14 +1514,11 @@ class Eating_Phase:
         self.player = Players.first_number_player
         self.player_list = Players.get_player_list()
 
-        # set trampled fish to zero for all players for grazing property
-        for player in Players.get_player_list():
-            player.set_trampled_fish(0)
 
     @staticmethod
-    def grazing_function(player: Player, eating_base: int, number: int, user_input=Functions.input_function):
+    def grazing_function(eating_base: int, max_number: int, user_input=Functions.input_function):
         """
-        player: Player instance
+
         change eating_base: int
         number - number of red fish to destroy: int
         user_input - added to unit tst - to change user input in test.py
@@ -1547,21 +1526,21 @@ class Eating_Phase:
         """
 
         assert eating_base > 0, f'Eating_Phase.grazing_function() - self.eating base <= 0'
-        assert number > 0, f'Eating_Phase.grazing_function() - number of animals with grazing property - 0'
+        assert max_number > 0, f'Eating_Phase.grazing_function() - number of animals with grazing property - 0'
 
-        if number < eating_base:
-            end_number = number
+        if max_number < eating_base:
+            end_number = max_number
         else:
             end_number = eating_base
         destroy_number = user_input([str(number) for number in range(1, end_number + 1)],
                                     f'You are using grazing property to destroy eating base. Input number'
                                     f'to delay from eating base (1-{end_number})')
-        if eating_base - int(destroy_number) > 0:
+        if eating_base - int(destroy_number) >= 0:
             eating_base = eating_base - int(destroy_number)
         else:
             print(f'Eating_phase.grazing_function(): destroy number > eating base')
             raise ValueError
-        player.increase_trampled_fish(int(destroy_number))
+
         print(f'new eating base = {eating_base}')
         return eating_base
 
@@ -2297,7 +2276,7 @@ class Eating_Phase:
                 buttons['piracy'] = True
 
         # grazing
-        if player.get_grazing_count() - player.get_trampled_fish() > 0 and \
+        if eating_base > 0 and player.get_grazing_count() and \
                 not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing'], history):
             buttons['grazing'] = True
 
@@ -2319,8 +2298,9 @@ class Eating_Phase:
 
         while len(self.list_of_pass) != len(Players.get_player_list()):  # main loop
 
-            if not player.get_can_eat_animals() and player.get_grazing_count() == 0:
-                self.list_of_pass.add(player)
+            if not player.get_can_eat_animals():
+                if player.get_grazing_count() == 0 or self.eating_base == 0:
+                    self.list_of_pass.add(player)
 
             if player in self.list_of_pass:
                 player = Players.next_player(player)
@@ -2368,7 +2348,7 @@ class Eating_Phase:
                     continue  # choose loop
 
                 elif choose == 'hunt':
-                    result = Eating_Phase.hunting(animal, player, self.player_list)
+                    result = Eating_Phase.hunting(animal, player, self.player_list, user_input)
                     if result:
                         history.append(choose)
                         self.animals_used_hunt.append(animal)
@@ -2388,7 +2368,8 @@ class Eating_Phase:
                     self.new_hibernate_list.append(animal)
 
                 elif choose == 'piracy':
-                    result = Eating_Phase.piracy_property(animal, animals_to_piracy, Players.get_player_list())
+                    result = Eating_Phase.piracy_property(animal, animals_to_piracy, Players.get_player_list(),
+                                                          user_input)
                     if result:
                         history.append(choose)
                         self.animals_used_piracy.append(animal)
@@ -2399,15 +2380,20 @@ class Eating_Phase:
 
                 elif choose == 'grazing':
                     history.append(choose)
-                    self.eating_base = Eating_Phase.grazing_function(player, self.eating_base,
-                                                                     player.get_grazing_count() -
-                                                                     player.get_trampled_fish(), user_input)
+                    self.eating_base = Eating_Phase.grazing_function(self.eating_base,
+                                                                     player.get_grazing_count(), user_input)
                     continue  # choose loop
 
                 elif choose == 'another animal':
                     history = []
                     animal = player.get_player_animal(player)
                     continue  # choose loop
+
+        print(f"{'*' * 30} End of eating phase {'*' * 30}")
+        for player in self.player_list:
+            print(f'player {player}')
+            for animal in player.get_player_animals():
+                print(f'{animal}')
 
 
 if __name__ == "__main__":
