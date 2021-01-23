@@ -1494,6 +1494,8 @@ class TestEvolution(unittest.TestCase):
             vanja = players.get_player_list()[0]
 
         vanja.name = 'vanja'
+
+        players.players_list = [mitja, vanja]
         # 2 make animals
 
         for i in range(3):
