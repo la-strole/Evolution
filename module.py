@@ -1,6 +1,5 @@
 """
 Created on 15 10 2017
-
 @author: zhenya.aka.john@gmail.com
 """
 from random import shuffle, randint, choice
@@ -78,20 +77,11 @@ class Players:
     Players of evolution game
     """
 
-    players_list = []
-    first_number_player = False
-
     def __init__(self, user_input=Functions.input_function):
-        Players.players_list = []
-        self.make_players_list(user_input)
-        Players.first_number_player = self.define_first_player(Players.get_player_list())
 
-    @staticmethod
-    def get_players_number():
-        """
-        return int - number of players
-        """
-        return len(Players.players_list)
+        self.players_list = []
+        self.make_players_list(user_input)
+        self.first_number_player = choice((self.get_player_list()))
 
     def make_players_list(self, user_input=Functions.input_function):
         """
@@ -102,37 +92,26 @@ class Players:
         choose = user_input([str(x + 1) for x in range(1, 8)], 'number of players (2-8): ')
         assert 2 <= int(choose) <= 8
         for i in range(int(choose)):
-            Players.players_list.append(Player())  # List of instances of Player class.
+            self.players_list.append(Player())  # List of instances of Player class.
 
-    @staticmethod
-    def next_player(player):
+    def next_player(self, player):
         """
         Select next Player.
         return: next player
         """
-        assert isinstance(player, Player), f'player is not Player instance'
 
         # find player in players list
-        number = Players.players_list.index(player)
+        number = self.players_list.index(player)
 
-        next_number = (number + 1) % Players.get_players_number()
+        next_number = (number + 1) % len(self.get_player_list())
 
-        return Players.players_list[next_number]
+        return self.players_list[next_number]
 
-    @staticmethod
-    def get_player_list():
+    def get_player_list(self):
         """
         return copy of players_list
         """
-        return Players.players_list.copy()
-
-    def define_first_player(self, players_list):
-        """
-        return first player randomly from Players.players_list
-        """
-        first_player = choice(players_list)
-        print(f'first player is {first_player.get_player_name()}')
-        return first_player
+        return self.players_list.copy()
 
     @staticmethod
     def get_player_from_list(players, user_input=Functions.input_function):
@@ -193,7 +172,6 @@ class Player:
         self.player_id = Player.player_id
         self.name = Player.player_id  # by default
         Player.player_id += 1
-
 
     def __str__(self):
         return f'Player {self.name}'
@@ -1017,21 +995,21 @@ class Animal:
 
         return True
 
-    @staticmethod
-    def find_players_animal_belong(animal, players_list: list):
+    def find_players_animal_belong(self, players_list: list):
         """
         return player to which animal belong, or 'unknown_player' else
         """
-        assert isinstance(animal, Animal)
+
         assert type(players_list) == list
         for player in players_list:
             assert isinstance(player, Player)
 
-        player_id = animal.get_belong_to_player_id()
+        player_id = self.get_belong_to_player_id()
 
         for player in players_list:
             if player.get_player_id() == player_id:
-                assert animal in player.get_player_animals()
+                assert self in player.get_player_animals()
+
                 return player
 
         return 'unknown_player'
@@ -1112,8 +1090,15 @@ class Development_Phase:
     development phase take players list and first player from Players class
     """
 
-    def __init__(self, user_input=Functions.input_function):
+    def __init__(self, players: Players, user_input=Functions.input_function):
+
+        assert isinstance(players, Players)
+
+        self.players = players
+        self.players_list = players.get_player_list()
+        self.first_player = players.first_number_player
         self.list_of_pass = []
+
         self.development_phase_function(user_input)
 
     @staticmethod
@@ -1203,7 +1188,7 @@ class Development_Phase:
         print('choose animal')
         animal1 = player.get_player_animal(player, user_input)
 
-        # pick communication/cooperation
+        # pick communication
         print(f'choose communication animal')
         animal2 = player.get_player_animal(player, user_input)
 
@@ -1389,13 +1374,13 @@ class Development_Phase:
         development phase function - while all players not in list_of_pass
         return None
         """
-        player = Players.first_number_player
+        player = self.first_player
 
         print('Development phase:')
-        while len(self.list_of_pass) != Players.get_players_number():
+        while len(self.list_of_pass) != len(self.players_list):
 
             if player in self.list_of_pass:
-                player = Players.next_player(player)
+                player = self.players.next_player(player)
                 continue
 
             print('*' * 84)
@@ -1404,7 +1389,7 @@ class Development_Phase:
             # if player has not cards on his card_hand - automatically pass
             if len(player.get_handcards()) == 0:
                 self.list_of_pass.append(player)
-                player = Players.next_player(player)
+                player = self.players.next_player(player)
                 continue
 
             # if player has animals
@@ -1415,7 +1400,7 @@ class Development_Phase:
 
                 if choose == 'y':
                     self.list_of_pass.append(player)
-                    player = Players.next_player(player)
+                    player = self.players.next_player(player)
                     continue
 
             # choose card from hand
@@ -1432,7 +1417,7 @@ class Development_Phase:
 
             if choose == 'a':
                 player.make_animal()
-                player = Players.next_player(player)
+                player = self.players.next_player(player)
                 continue
 
             elif choose == 'p':
@@ -1441,10 +1426,10 @@ class Development_Phase:
                 for animal in player.get_player_animals():
                     print(animal.get_animal_properties())
 
-                result = Development_Phase.make_property(Players.get_player_list(), player, card, user_input)
+                result = Development_Phase.make_property(self.players_list, player, card, user_input)
 
                 if result:
-                    player = Players.next_player(player)
+                    player = self.players.next_player(player)
                     continue
 
                 else:
@@ -1457,7 +1442,11 @@ class Development_Phase:
 
 class Define_Eating_Base_Phase:
 
-    def __init__(self, players_number):
+    def __init__(self, players: Players):
+
+        assert isinstance(players, Players)
+
+        players_number = len(players.get_player_list())
 
         assert 2 <= players_number < 8
 
@@ -1491,9 +1480,8 @@ class Define_Eating_Base_Phase:
 
 class Eating_Phase:
 
-    def __init__(self, eating_base: int, hibernate_list: list, is_last_turn=False):
+    def __init__(self, players: Players, eating_base: int, hibernate_list: list, is_last_turn=False):
         """
-
         eating_base: int - number of red fish from Define_Eating_Base_Phase
         is_last_turn - bool (False by default) if this turn is last - in last turn we can not use hibernation property
         hibernate_list- list of ani,als - which use hibernation in last turn - they can not use  this property again
@@ -1501,24 +1489,24 @@ class Eating_Phase:
 
         assert type(eating_base) == int, f'Eating_Phase.__init__(): {eating_base} not integer'
         assert eating_base >= 0, f'Eating_Phase.__init__(): {eating_base} < 0'
+        assert isinstance(players, Players)
 
         self.eating_base = eating_base
         self.is_last_turn = is_last_turn
         self.hibernate_list = hibernate_list
+        self.players = players
 
         self.list_of_pass = set()
         self.new_hibernate_list = []
         self.animals_used_piracy = []
         self.animals_used_hunt = []
 
-        self.player = Players.first_number_player
-        self.player_list = Players.get_player_list()
-
+        self.player = self.players.first_number_player
+        self.player_list = self.players.get_player_list()
 
     @staticmethod
     def grazing_function(eating_base: int, max_number: int, user_input=Functions.input_function):
         """
-
         change eating_base: int
         number - number of red fish to destroy: int
         user_input - added to unit tst - to change user input in test.py
@@ -1806,24 +1794,6 @@ class Eating_Phase:
         print(f'animal {animal} change {number} fat to blue cards: hungry={animal.get_hungry()}')
 
     @staticmethod
-    def hibernation(animal: Animal):
-        """
-        Put animal in hibernation state, change hibernation ability to False
-        animal: Animal instance
-        assume animal has hibernation ability
-        assume animal is not in hibernation state
-        assume it is not last turn
-        assume it is not used twice
-        return: None
-        """
-
-        assert isinstance(animal, Animal), f'EatingPhase.hibernation(): animal is not Animal instance'
-        assert animal.can_hibernate(), f'EatingPhase.hibernate(): animal can not hibernate now'
-
-        animal.to_hibernate()
-        animal.hibernation_possibility_False()
-
-    @staticmethod
     def choose_animal_to_attack(animal: Animal, player_list: list, user_input=Functions.input_function):
         """
         choose animal to attack in hunting process
@@ -1974,7 +1944,7 @@ class Eating_Phase:
                          user_input=Functions.input_function):
         """
         redirect attack from current animal to another animal in players hand
-        assume player haas more then 1 animals in his hand
+        assume player has more then 1 animals in his hand
         return another animal or False
         """
         assert isinstance(animal, Animal)
@@ -2034,7 +2004,7 @@ class Eating_Phase:
                 raise ValueError
 
     @staticmethod
-    def attack_function(victim: Animal, carnivorous: Animal, players: list, mimicry_list: list,
+    def attack_function(victim: Animal, carnivorous: Animal, players_list: list, mimicry_list: list,
                         user_input=Functions.input_function):
         """
         !recursive function at mimicry property!
@@ -2042,14 +2012,14 @@ class Eating_Phase:
         return number of blue fish after carnivorous attack animal: int
         """
         assert isinstance(victim, Animal)
-        assert type(players) == list
-        for _ in players:
+        assert type(players_list) == list
+        for _ in players_list:
             assert isinstance(_, Player)
         assert type(mimicry_list) == list
         assert isinstance(carnivorous, Animal)
         assert carnivorous.can_attack(victim)
 
-        victim_player = Animal.find_players_animal_belong(victim, players)
+        victim_player = victim.find_players_animal_belong(players_list)
         print(f'{victim_player.get_player_name()}, your animal is under attack!')
 
         if victim.is_running():
@@ -2063,7 +2033,7 @@ class Eating_Phase:
         if victim.is_mimicry() and victim not in mimicry_list:
             result = Eating_Phase.mimicry_property(carnivorous, victim, victim_player, mimicry_list, user_input)
             if result != False:  # if result = redirected_animal
-                return Eating_Phase.attack_function(result, carnivorous, players, mimicry_list, user_input)
+                return Eating_Phase.attack_function(result, carnivorous, players_list, mimicry_list, user_input)
 
         victim.animal_death(victim_player)
         if victim.is_poisonous():
@@ -2071,13 +2041,14 @@ class Eating_Phase:
         return 2
 
     @staticmethod
-    def scavenger_property(player_hunter: Player, user_input=Functions.input_function):
+    def scavenger_property(player_hunter: Player, players: Players, user_input=Functions.input_function):
         """
         realise scavenger property
         return True if somebody can realize scavenger property else false
         """
         assert isinstance(player_hunter, Player)
-        assert player_hunter in Players.get_player_list()
+        assert player_hunter in players.get_player_list()
+        assert isinstance(players, Players)
 
         # for current player
         scavengers = player_hunter.get_scavenger_animals()
@@ -2098,7 +2069,7 @@ class Eating_Phase:
                         print(f'animal {scavenger} took blue fish as scavenger')
                         return True
         # for players clockwise
-        player = Players.next_player(player_hunter)
+        player = players.next_player(player_hunter)
         while player != player_hunter:
             scavengers = player.get_scavenger_animals()
             if scavengers and Functions.any_in(scavengers, player.get_can_take_fish_animals()):
@@ -2118,12 +2089,12 @@ class Eating_Phase:
                             print(f'animal {scavenger} took blue fish as scavenger')
                             return True
 
-            player = Players.next_player(player)
+            player = players.next_player(player)
 
         return False
 
     @staticmethod
-    def hunting(carnivorous: Animal, player_hunter: Player, player_list: list, user_input=Functions.input_function):
+    def hunting(carnivorous: Animal, player_hunter: Player, players: Players, user_input=Functions.input_function):
         """
         hunting process
         animal: Animal instance
@@ -2134,13 +2105,12 @@ class Eating_Phase:
         return: True if carnivorous attacked victim , else return false
         """
         assert isinstance(carnivorous, Animal), f'EatingPhase.hunting(): animal is not Animal instance'
-        assert type(player_list) == list, f'EatingPhase.hunting(): player_list is not list is {type(player_list)}'
-        for _ in player_list:
-            assert isinstance(player_hunter, Player), f'Eating_Phase.hunting(): {player_hunter} is no Player() instance'
+        assert isinstance(players, Players)
         assert carnivorous.can_hunt(), f'EatingPhase.hunting(): animal can not hunt'
         assert isinstance(player_hunter, Player)
         assert carnivorous in player_hunter.get_player_animals()
 
+        player_list = players.get_player_list()
         # choose animal to attack
 
         victim = Eating_Phase.choose_animal_to_attack(carnivorous, player_list, user_input)
@@ -2172,7 +2142,7 @@ class Eating_Phase:
             # scavenger property
 
             if blue_fish == 2:  # if carnivorous killed victim
-                Eating_Phase.scavenger_property(player_hunter, user_input)
+                Eating_Phase.scavenger_property(player_hunter, players, user_input)
 
             return True
 
@@ -2221,14 +2191,13 @@ class Eating_Phase:
             else:
                 raise ValueError
 
-            Eating_Phase.take_blue_fish(pirate.find_players_animal_belong(pirate, players_list), pirate)
+            Eating_Phase.take_blue_fish(pirate.find_players_animal_belong(players_list), pirate)
             return True
 
     def make_buttons_for_animal(self, context, buttons: dict, eating_base: int, animals_to_piracy: list):
         """
         context - (animal, player, players_list) tuple
         buttons - look at eating phase turn
-
         """
         animal, player, players_list, history = context
 
@@ -2296,14 +2265,14 @@ class Eating_Phase:
         print('*******************Eating phase*************************')
         player = self.player
 
-        while len(self.list_of_pass) != len(Players.get_player_list()):  # main loop
+        while len(self.list_of_pass) != len(self.player_list):  # main loop
 
             if not player.get_can_eat_animals():
                 if player.get_grazing_count() == 0 or self.eating_base == 0:
                     self.list_of_pass.add(player)
 
             if player in self.list_of_pass:
-                player = Players.next_player(player)
+                player = self.players.next_player(player)
                 continue  # main loop
 
             buttons_template = {'pass': False, 'next player': False, 'take red fish': False, 'hunt': False,
@@ -2334,12 +2303,12 @@ class Eating_Phase:
                 if choose == 'pass':
                     history.append(choose)
                     self.list_of_pass.add(player)
-                    player = Players.next_player(player)
+                    player = self.players.next_player(player)
                     break  # choose loop
 
                 elif choose == 'next player':
                     history.append(choose)
-                    player = Players.next_player(player)
+                    player = self.players.next_player(player)
                     break  # choose loop
 
                 elif choose == 'take red fish':
@@ -2348,7 +2317,7 @@ class Eating_Phase:
                     continue  # choose loop
 
                 elif choose == 'hunt':
-                    result = Eating_Phase.hunting(animal, player, self.player_list, user_input)
+                    result = Eating_Phase.hunting(animal, player, self.players, user_input)
                     if result:
                         history.append(choose)
                         self.animals_used_hunt.append(animal)
@@ -2368,7 +2337,7 @@ class Eating_Phase:
                     self.new_hibernate_list.append(animal)
 
                 elif choose == 'piracy':
-                    result = Eating_Phase.piracy_property(animal, animals_to_piracy, Players.get_player_list(),
+                    result = Eating_Phase.piracy_property(animal, animals_to_piracy, self.player_list,
                                                           user_input)
                     if result:
                         history.append(choose)
@@ -2399,22 +2368,19 @@ class Eating_Phase:
 if __name__ == "__main__":
 
     players = Players()
-    deck = Deck(players.get_players_number())
+
+    deck = Deck(len(players.get_player_list()))
 
     for player in players.get_player_list():
         player.set_player_name()
         for _ in range(6):
             player.put_handcard(deck.take_deckcards()[0])
 
-    development_phase = Development_Phase()
-    define_eating_base_phase = Define_Eating_Base_Phase(players.get_players_number())
+    development_phase = Development_Phase(players)
+
+    define_eating_base_phase = Define_Eating_Base_Phase(players)
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())
-    eating_phase = Eating_Phase(food, [])
-    eating_phase.eating_phase()
 
-    # fir test
-    for player in players.get_player_list():
-        print(f'PLAYER {player}')
-        for animal in player.get_player_animals():
-            print(f'ANIMAL {animal}')
+    eating_phase = Eating_Phase(players, food, [])
+    eating_phase.eating_phase()

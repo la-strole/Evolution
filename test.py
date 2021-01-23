@@ -64,7 +64,7 @@ class TestEvolution(unittest.TestCase):
             return str(number)
 
         players = module.Players(user_input)
-        self.assertEqual(players.get_players_number(), number)
+        self.assertEqual(len(players.get_player_list()), number)
 
         # number of players = 1
         number = 1
@@ -189,7 +189,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(user_gen)
 
-        development_phase = module.Development_Phase(user_input)
+        development_phase = module.Development_Phase(players_list, user_input)
 
         self.assertEqual(len(mitja.get_player_animals()), 3)
         self.assertEqual(len(vanja.get_player_animals()), 2)
@@ -263,14 +263,17 @@ class TestEvolution(unittest.TestCase):
         def test_input2(*args):
             return '2'
 
-        players = [module.Player() for x in range(5)]
+        def user_input(*args):
+            return '5'
+        players = module.Players(user_input)
+        players_list = players.get_player_list()
         # add grazing animlas to Player[0]
         grazing_animal = module.Animal()
         grazing_animal.add_single_animal_property('grazing')
         for i in range(5):
-            players[0].animals.append(grazing_animal)
+            players_list[0].animals.append(grazing_animal)
         # instance of eating Phase class
-        eating_phase = module.Eating_Phase(eating_base=5, hibernate_list=[])
+        eating_phase = module.Eating_Phase(players, eating_base=5, hibernate_list=[])
         # eating base < 0
         eating_phase.eating_base = 0
         self.assertRaises(AssertionError, eating_phase.grazing_function, eating_phase.eating_base, 2)
@@ -933,7 +936,7 @@ class TestEvolution(unittest.TestCase):
             return next(f)
 
         # if carnivorous can not attack animal - return false
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), False)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), False)
 
         answers = ['1',  # choose first player
                    '2']  # # choose victim1 which is high_body_weight
@@ -947,7 +950,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), False)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), False)
 
         answers = ['2',  # choose second player
                    '1']  # choose victim2
@@ -961,7 +964,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
 
         self.assertEqual(victim2.is_alive(), False)
         self.assertEqual(carnivorous.get_hungry(), 0)
@@ -1023,7 +1026,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(victim2.is_alive(), False)
         self.assertEqual(carnivorous.get_hungry(), 0)
         self.assertEqual(carnivorous.blue_fish_count, 1)
@@ -1080,7 +1083,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(victim3.blue_fish_count, 0)
 
@@ -1134,7 +1137,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(hunter_scavenger.blue_fish_count, 0)
         self.assertEqual(victim2.blue_fish_count, 0)
         self.assertEqual(victim3.blue_fish_count, 1)
@@ -1190,7 +1193,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(carnivorous.blue_fish_count, 2)
         self.assertEqual(victim2.is_alive(), False)
@@ -1247,7 +1250,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(carnivorous.blue_fish_count, 2)
         self.assertEqual(victim2.is_alive(), True)
@@ -1293,7 +1296,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(carnivorous.blue_fish_count, 2)
 
@@ -1348,7 +1351,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(carnivorous.blue_fish_count, 2)
         self.assertEqual(victim2.is_alive(), False)
@@ -1404,7 +1407,7 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(carnivorous.blue_fish_count, 2)
         self.assertEqual(victim2.is_alive(), True)
@@ -1464,14 +1467,14 @@ class TestEvolution(unittest.TestCase):
         def user_input(*args):
             return next(f)
 
-        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, player_list, user_input), True)
+        self.assertEqual(module.Eating_Phase.hunting(carnivorous, player_hunter, players, user_input), True)
         self.assertEqual(hunter_scavenger.blue_fish_count, 1)
         self.assertEqual(carnivorous.blue_fish_count, 2)
         self.assertEqual(victim2.is_alive(), False)
         self.assertEqual(victim1.is_alive(), True)
         self.assertEqual(victim3.is_alive(), True)
-    '''
 
+    '''
     def test_eating_phase_function(self):
         """
         unit test for eating phase function
@@ -1485,7 +1488,11 @@ class TestEvolution(unittest.TestCase):
 
         mitja = players.first_number_player
         mitja.name = 'mitja'
-        vanja = players.get_player_list()[0] if players.get_player_list()[0] != mitja else players.get_player_list()[1]
+        if players.get_player_list()[0] == mitja:
+            vanja = players.get_player_list()[1]
+        else:
+            vanja = players.get_player_list()[0]
+
         vanja.name = 'vanja'
         # 2 make animals
 
@@ -1536,7 +1543,7 @@ class TestEvolution(unittest.TestCase):
 
         eating_base = 6
 
-        Eating_phase = module.Eating_Phase(eating_base, [])
+        Eating_phase = module.Eating_Phase(players, eating_base, [])
 
         self.assertEqual(Eating_phase.eating_phase(user_input), None)
 
