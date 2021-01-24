@@ -246,6 +246,12 @@ class Player:
         """
         self.cards_dump += number
 
+    def get_cards_damp(self):
+        """
+        return int: cards damp
+        """
+        return self.cards_dump
+
     def get_player_animals(self):
         """
         return player's animals list
@@ -1057,9 +1063,13 @@ class Deck:
         # Making set_cards from cards and shuffling it,
         # set twice 'set_cards' for 5 - 8 players.
         if number_of_players < 5:
-            set_cards = self.cards * 4
+            #set_cards = self.cards.copy() * 4
+            #
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+            set_cards = self.cards.copy()
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         elif 5 <= number_of_players <= 8:
-            set_cards = self.cards * 8
+            set_cards = self.cards.copy() * 8
         else:
             print("looks like this is something wrong with number_players!")
             raise ValueError
@@ -2466,8 +2476,8 @@ def properties_count(player: Player):
 
         single_properties += len(animal.get_single_animal_properties())
         symbiosys_properties += len(animal.get_symbiosys())
-        comm_coop_properties += len(animal.get_communication)
-        comm_coop_properties += len(animal.get_cooperation)
+        comm_coop_properties += len(animal.get_communication())
+        comm_coop_properties += len(animal.get_cooperation())
 
         if animal.is_high_body_weight() or animal.is_carnivorous():
             count += 1
@@ -2492,7 +2502,7 @@ def scoring(players: Players):
         score_dict[player] = properties_count(player)
 
     for p, s in sorted(score_dict.items(), key=lambda item: item[1], reverse=True):
-        print(f'{p.get_player_name()}\t total score: {s}')
+        print(f'{p.get_player_name()}\t total score: {s}, cards damp = {p.get_cards_damp()}')
 
 
 def game():
@@ -2542,3 +2552,5 @@ def game():
 if __name__ == "__main__":
     game()
 
+# change deck in make cards function - was changed to min value
+# todo problem with take cards - two alive animals . tree cards on gand and take only 2 cards...
