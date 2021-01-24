@@ -173,6 +173,10 @@ class Player:
         self.name = Player.player_id  # by default
         Player.player_id += 1
 
+        # there are playing cards according to the rules and you can watch them at any time,
+        # but I'm already working with properties - so far so.
+        self.cards_dump = 0
+
     def __str__(self):
         return f'Player {self.name}'
 
@@ -234,6 +238,13 @@ class Player:
         """
         assert card in Deck.get_cards()
         self.cards_hand.append(card)
+
+    def increase_cards_dump(self, number=1):
+        """
+        increase cards damp to number (1 by default)
+        return None
+        """
+        self.cards_dump += number
 
     def get_player_animals(self):
         """
@@ -361,7 +372,6 @@ class Animal:
         self.fat = 0
         self.fat_cards_count = 0  # quantity of cards "fat"
         self.hibernation_active = False
-        self.hibernation_possibility = False
         self.poisoned = False
         self.alive = True
 
@@ -401,6 +411,7 @@ class Animal:
 
         self.alive = False
         player.animals.remove(self)
+        player.increase_cards_dump()
         print(f'animal {self}, died...')
 
         # delete all pair properties
@@ -408,16 +419,19 @@ class Animal:
         if self.get_communication():
             for communicator in self.get_communication():
                 communicator.remove_communication(self)
+            player.increase_cards_dump(len(self.get_communication()))
             self.communication = []
 
         if self.get_cooperation():
             for cooperator in self.get_cooperation():
                 cooperator.remove_cooperation(self)
+            player.increase_cards_dump(len(self.get_cooperation()))
             self.cooperation = []
 
         for item in player.get_player_animals():
             if self in item.get_symbiosys():
                 item.remove_symbiosys(self)
+                player.increase_cards_dump()
 
     def increase_red_fish(self, number=1):
         """
@@ -490,7 +504,6 @@ class Animal:
         self.single_properties.remove(property)
 
         if property == 'hibernation_ability':
-            self.hibernation_possibility_False()
             self.hibernation_active = False
 
         hungry = 1
@@ -726,7 +739,7 @@ class Animal:
         returns True: bool if animal can use hibernate property
         else returns False: bool
         """
-        if self.is_hibernation_ability() and self.hibernation_possibility and not self.hibernation_active:
+        if self.is_hibernation_ability() and not self.hibernation_active:
             return True
         else:
             return False
@@ -748,19 +761,12 @@ class Animal:
         """
         self.hibernation_active = True
 
-    def hibernation_possibility_False(self):
+    def from_hibernate(self):
         """
-        change hibernation ability state - False
-        return: None
+        wake up animal
+        return None
         """
-        self.hibernation_possibility = False
-
-    def hibernation_possibility_True(self):
-        """
-        change hibernation ability state - True
-        return: None
-        """
-        self.hibernation_possibility = True
+        self.hibernation_active = False
 
     def is_poisonous(self):
         """
@@ -1599,7 +1605,7 @@ class Eating_Phase:
                     print(f'animal {animal_to_take} reduce hungry to {animal_to_take.get_hungry()}')
                 elif animal_to_take.get_is_full_fat() > 0:
                     animal_to_take.increase_fat()
-                    print(f'animal {animal_to_take} reduce fat to {animal_to_take.get_fat()}')
+                    print(f'animal {animal_to_take} increase fat to {animal_to_take.get_fat()}')
                 else:
                     raise ValueError
 
@@ -1674,7 +1680,7 @@ class Eating_Phase:
                     print(f'animal {animal_to_take} reduce hungry to {animal_to_take.get_hungry()}')
                 elif animal_to_take.get_is_full_fat() > 0:
                     animal_to_take.increase_fat()
-                    print(f'animal {animal_to_take} reduce fat to {animal_to_take.get_fat()}')
+                    print(f'animal {animal_to_take} increase fat to {animal_to_take.get_fat()}')
                 else:
                     raise ValueError
 
@@ -2029,6 +2035,7 @@ class Eating_Phase:
         if victim.is_tail_loss():
             result = Eating_Phase.tail_loss_property(victim, user_input)
             if result:
+                victim_player.increase_cards_dump()
                 return 1
         if victim.is_mimicry() and victim not in mimicry_list:
             result = Eating_Phase.mimicry_property(carnivorous, victim, victim_player, mimicry_list, user_input)
@@ -2232,7 +2239,10 @@ class Eating_Phase:
         # hibernate
         if animal.can_hibernate() and animal not in self.hibernate_list and \
                 not Functions.any_in(['hunt', 'fat change', 'piracy', 'hibernate', 'grazing'], history):
-            buttons['hibernate'] = True
+            if self.is_last_turn:
+                buttons['hibernate'] = False
+            else:
+                buttons['hibernate'] = True
 
         # piracy
         if animal.is_piracy() and animal not in self.animals_used_piracy and animal.can_take_fish() and \
@@ -2365,7 +2375,130 @@ class Eating_Phase:
                 print(f'{animal}')
 
 
-if __name__ == "__main__":
+class Extinction_Phase:
+    """
+    extinction phase
+    """
+
+    def __init__(self, players: Players, deck: Deck):
+
+        assert isinstance(players, Players)
+        assert isinstance(deck, Deck)
+        self.players = players
+        self.players_list = self.players.get_player_list()
+        self.deck = deck
+
+        self.animal_extinction()
+        self.cleaning()
+        self.take_playing_cards()
+
+    def animal_extinction(self):
+        """
+        all hungry animals die
+        return None
+        """
+        for player in self.players_list:
+            for animal in player.get_player_animals():
+                if (animal.get_hungry() > 0 and not animal.is_hibernate()) or animal.is_poisoned():
+                    animal.animal_death(player)
+
+    def take_playing_cards(self):
+        """
+        each player take cards from playing deck
+        assume all hungry animals already died
+        return None
+        """
+        excluded_list = []
+
+        can_take_cards = dict()
+
+        # initialize dictionary
+        for player in self.players_list:
+            if not player.get_player_animals() and not player.get_handcards():
+                can_take_cards[player] = [6, 0]
+            else:
+                can_take_cards[player] = [len(player.get_player_animals()) + 1, 0]
+
+        player = self.players.first_number_player
+
+        while len(excluded_list) != len(self.players_list):
+
+            # if deck is empty
+            if len(self.deck.get_playing_deck()) == 0:
+                break
+
+            # if player took max number of cards
+            if can_take_cards[player][0] == can_take_cards[player][1]:
+                excluded_list.append(player)
+                continue
+
+            player.put_handcard(self.deck.take_deckcards()[0])
+            can_take_cards[player][1] += 1
+            player = self.players.next_player(player)
+
+    def cleaning(self):
+        """
+        prepare to next turn
+        assume all animal that have to die - died.
+        """
+        for player in self.players_list:
+
+            for animal in player.get_player_animals():
+
+                animal.reduce_red_fish(animal.get_red_fish())
+                animal.reduce_blue_fish(animal.get_blue_fish())
+                if animal.is_hibernate():
+                    animal.from_hibernate()
+
+
+def properties_count(player: Player):
+    """
+    assume all animals are alive
+    count properties from player
+    """
+    assert isinstance(player, Player)
+    count = 0
+    single_properties = 0
+    symbiosys_properties = 0
+    comm_coop_properties = 0
+
+    for animal in player.get_player_animals():
+
+        single_properties += len(animal.get_single_animal_properties())
+        symbiosys_properties += len(animal.get_symbiosys())
+        comm_coop_properties += len(animal.get_communication)
+        comm_coop_properties += len(animal.get_cooperation)
+
+        if animal.is_high_body_weight() or animal.is_carnivorous():
+            count += 1
+        if 'parasite' in animal.get_single_animal_properties():
+            count += 2
+
+    count = count + single_properties + symbiosys_properties + (comm_coop_properties / 2)
+
+    return count
+
+
+def scoring(players: Players):
+    """
+    score count
+    print scores
+    return None
+    """
+    assert isinstance(players, Players)
+    score_dict = dict()
+
+    for player in players.get_player_list():
+        score_dict[player] = properties_count(player)
+
+    for p, s in sorted(score_dict.items(), key=lambda item: item[1], reverse=True):
+        print(f'{p.get_player_name()}\t total score: {s}')
+
+
+def game():
+    """
+    game of evolution
+    """
 
     players = Players()
 
@@ -2376,11 +2509,36 @@ if __name__ == "__main__":
         for _ in range(6):
             player.put_handcard(deck.take_deckcards()[0])
 
-    development_phase = Development_Phase(players)
+    while len(deck.get_playing_deck()) > 0:
 
+        development_phase = Development_Phase(players)
+
+        define_eating_base_phase = Define_Eating_Base_Phase(players)
+        food = define_eating_base_phase.get_food_count()
+        print(define_eating_base_phase.get_text_of_phase())
+
+        eating_phase = Eating_Phase(players, food, [])
+        eating_phase.eating_phase()
+
+        extinction_phase = Extinction_Phase(players, deck)
+
+        players.first_number_player = players.next_player(players.first_number_player)
+
+    # last turn
+    print('last turn')
+    development_phase = Development_Phase(players)
     define_eating_base_phase = Define_Eating_Base_Phase(players)
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())
 
-    eating_phase = Eating_Phase(players, food, [])
+    eating_phase = Eating_Phase(players, food, [], is_last_turn=True)
     eating_phase.eating_phase()
+
+    extinction_phase = Extinction_Phase(players, deck)
+
+    scoring(players)
+
+
+if __name__ == "__main__":
+    game()
+
