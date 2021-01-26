@@ -418,6 +418,7 @@ class Animal:
         self.alive = False
         player.animals.remove(self)
         player.increase_cards_dump()
+
         print(f'animal {self}, died...')
 
         # delete all pair properties
@@ -425,19 +426,22 @@ class Animal:
         if self.get_communication():
             for communicator in self.get_communication():
                 communicator.remove_communication(self)
-            player.increase_cards_dump(len(self.get_communication()))
+                player.increase_cards_dump()
             self.communication = []
 
         if self.get_cooperation():
             for cooperator in self.get_cooperation():
                 cooperator.remove_cooperation(self)
-            player.increase_cards_dump(len(self.get_cooperation()))
+                player.increase_cards_dump()
             self.cooperation = []
 
         for item in player.get_player_animals():
             if self in item.get_symbiosys():
                 item.remove_symbiosys(self)
                 player.increase_cards_dump()
+
+        player.increase_cards_dump(len(self.get_single_animal_properties()))
+
 
     def increase_red_fish(self, number=1):
         """
@@ -1063,11 +1067,11 @@ class Deck:
         # Making set_cards from cards and shuffling it,
         # set twice 'set_cards' for 5 - 8 players.
         if number_of_players < 5:
-            #set_cards = self.cards.copy() * 4
+            set_cards = self.cards.copy() * 4
             #
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
-            set_cards = self.cards.copy()
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+        # set_cards = self.cards.copy()
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         elif 5 <= number_of_players <= 8:
             set_cards = self.cards.copy() * 8
         else:
@@ -1336,10 +1340,10 @@ class Development_Phase:
         return property
 
     @staticmethod
-    def make_property(players_list, player: Player, card: tuple, user_input=Functions.input_function):
+    def make_property(players_list, player: Player, property: str, user_input=Functions.input_function):
         """
         take property from card, try to put it on animal
-        card - card from player's hand
+        property - froperty from card from player's hand
         return True if can make this property, else return False
         """
         assert type(players_list) == list
@@ -1348,10 +1352,6 @@ class Development_Phase:
         assert isinstance(player, Player), f'Development_Phase.make_parasite_property():' \
                                            f'player is not Player instance'
         assert player in players_list
-        assert card in Deck.get_cards(), f'Development_Phase.make_parasite_property():' \
-                                         f'{card} is not in cards of game'
-
-        property = Development_Phase.get_property_from_card(card, user_input)
 
         if property == 'symbiosys':
             result = Development_Phase.make_symbiosys_property(player, user_input)
@@ -1442,7 +1442,8 @@ class Development_Phase:
                 for animal in player.get_player_animals():
                     print(animal.get_animal_properties())
 
-                result = Development_Phase.make_property(self.players_list, player, card, user_input)
+                property = Development_Phase.get_property_from_card(card, user_input)
+                result = Development_Phase.make_property(self.players_list, player, property, user_input)
 
                 if result:
                     player = self.players.next_player(player)
@@ -2473,7 +2474,7 @@ def properties_count(player: Player):
     comm_coop_properties = 0
 
     for animal in player.get_player_animals():
-
+        count += 2
         single_properties += len(animal.get_single_animal_properties())
         symbiosys_properties += len(animal.get_symbiosys())
         comm_coop_properties += len(animal.get_communication())
@@ -2484,9 +2485,9 @@ def properties_count(player: Player):
         if 'parasite' in animal.get_single_animal_properties():
             count += 2
 
-    count = count + single_properties + symbiosys_properties + (comm_coop_properties / 2)
+    result = count + single_properties + symbiosys_properties + (comm_coop_properties / 2)
 
-    return count
+    return int(result)
 
 
 def scoring(players: Players):
@@ -2502,7 +2503,7 @@ def scoring(players: Players):
         score_dict[player] = properties_count(player)
 
     for p, s in sorted(score_dict.items(), key=lambda item: item[1], reverse=True):
-        print(f'{p.get_player_name()}\t total score: {s}, cards damp = {p.get_cards_damp()}')
+        print(f'{p.get_player_name()}\t total score: {s}\t cards damp = {p.get_cards_damp()}')
 
 
 def game():
@@ -2520,7 +2521,6 @@ def game():
             player.put_handcard(deck.take_deckcards()[0])
 
     while len(deck.get_playing_deck()) > 0:
-
         development_phase = Development_Phase(players)
 
         define_eating_base_phase = Define_Eating_Base_Phase(players)

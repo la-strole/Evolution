@@ -1475,6 +1475,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(victim3.is_alive(), True)
 
     '''
+
     def test_eating_phase_function(self):
         """
         unit test for eating phase function
@@ -1548,7 +1549,74 @@ class TestEvolution(unittest.TestCase):
         Eating_phase = module.Eating_Phase(players, eating_base, [])
 
         self.assertEqual(Eating_phase.eating_phase(user_input), None)
+        self.assertEqual(len(mitja.get_player_animals()), 3)
+        self.assertEqual(len(vanja.get_player_animals()), 1)
+        self.assertEqual(mitja.get_player_animals()[0].get_blue_fish(), 2)
+        self.assertEqual(mitja.get_player_animals()[0].get_red_fish(), 0)
+        self.assertEqual(mitja.get_player_animals()[0].get_fat(), 0)
+        self.assertEqual(mitja.get_player_animals()[1].get_blue_fish(), 0)
+        self.assertEqual(mitja.get_player_animals()[1].get_red_fish(), 1)
+        self.assertEqual(mitja.get_player_animals()[1].get_fat(), 0)
+        self.assertEqual(mitja.get_player_animals()[2].get_blue_fish(), 0)
+        self.assertEqual(mitja.get_player_animals()[2].get_red_fish(), 0)
+        self.assertEqual(mitja.get_player_animals()[2].get_fat(), 0)
+        self.assertEqual(vanja.get_player_animals()[0].get_blue_fish(), 0)
+        self.assertEqual(vanja.get_player_animals()[0].get_red_fish(), 1)
+        self.assertEqual(vanja.get_player_animals()[0].get_fat(), 1)
 
+        # hand test
+
+        players = TestEvolution.make_players_with_animals(2, 2)
+
+        for player in players.get_player_list():
+            for animal in player.get_player_animals():
+
+                single_properties = ['high_body_weight', 'swimming', 'sharp_vision', 'burrowing', 'carnivorous',
+                                     'parasite',
+                                     'hibernation_ability', 'tail_loss', 'mimicry', 'running', 'poisonous', 'grazing',
+                                     'scavenger', 'camouflage', 'piracy']
+
+                symb = randint(0, 4)
+                comm = randint(0, 4)
+                coop = randint(0, 4)
+                animals = player.get_player_animals()
+                animals.remove(animal)
+
+                for x in range(random.randint(3, 5)):
+                    property = random.choice(single_properties)
+                    module.Development_Phase.make_single_property(player, property, lambda *x:
+                    str(player.get_player_animals().index(animal)))
+
+                if symb == 0:
+                    try:
+                        animal.add_symbiosys(random.choice(animals))
+                    except:
+                        pass
+
+                if comm == 0:
+                    pair_animal = random.choice(animals)
+                    try:
+                        animal.add_communication(pair_animal)
+                        pair_animal.add_communication(animal)
+                    except:
+                        pass
+
+                if coop == 0:
+                    pair_animal = random.choice(animals)
+                    try:
+                        animal.add_cooperation(pair_animal)
+                        pair_animal.add_cooperation(animal)
+                    except:
+                        pass
+
+        eating_base = randint(1, 8)
+        eating_phase = module.Eating_Phase(players, eating_base, [], is_last_turn=True)
+        eating_phase.eating_phase()
+        deck = module.Deck(2)
+        deck.playing_deck = []
+        extinction_phase = module.Extinction_Phase(players, deck)
+
+        module.scoring(players)
 
 if __name__ == '__main__':
     unittest.main()
