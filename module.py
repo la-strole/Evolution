@@ -442,7 +442,6 @@ class Animal:
 
         player.increase_cards_dump(len(self.get_single_animal_properties()))
 
-
     def increase_red_fish(self, number=1):
         """
         increase red fish count on number - 1 by default
@@ -2399,10 +2398,6 @@ class Extinction_Phase:
         self.players_list = self.players.get_player_list()
         self.deck = deck
 
-        self.animal_extinction()
-        self.cleaning()
-        self.take_playing_cards()
-
     def animal_extinction(self):
         """
         all hungry animals die
@@ -2460,6 +2455,12 @@ class Extinction_Phase:
                 animal.reduce_blue_fish(animal.get_blue_fish())
                 if animal.is_hibernate():
                     animal.from_hibernate()
+
+    def extinction_phase(self):
+
+        self.animal_extinction()
+        self.cleaning()
+        self.take_playing_cards()
 
 
 def properties_count(player: Player):
@@ -2531,6 +2532,7 @@ def game():
         eating_phase.eating_phase()
 
         extinction_phase = Extinction_Phase(players, deck)
+        extinction_phase.extinction_phase()
 
         players.first_number_player = players.next_player(players.first_number_player)
 
@@ -2545,6 +2547,7 @@ def game():
     eating_phase.eating_phase()
 
     extinction_phase = Extinction_Phase(players, deck)
+    extinction_phase.extinction_phase()
 
     scoring(players)
 

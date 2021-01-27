@@ -1474,7 +1474,7 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(victim1.is_alive(), True)
         self.assertEqual(victim3.is_alive(), True)
 
-    '''
+    
 
     def test_eating_phase_function(self):
         """
@@ -1566,6 +1566,7 @@ class TestEvolution(unittest.TestCase):
 
         # hand test
 
+        
         players = TestEvolution.make_players_with_animals(2, 2)
 
         for player in players.get_player_list():
@@ -1617,6 +1618,69 @@ class TestEvolution(unittest.TestCase):
         extinction_phase = module.Extinction_Phase(players, deck)
 
         module.scoring(players)
+    '''
+
+    def test_extinction_phase(self):
+        """
+        unit test for extinction phase
+        """
+        for _ in range(90):
+            players = TestEvolution.make_players_with_animals(3, 4)
+            deck = module.Deck(len(players.get_player_list()))
+            card_len = random.randint(1,3)
+            if card_len == 1:
+                k = len(players.get_player_list()) - random.randint(1, len(players.get_player_list())-1)
+            elif card_len == 2:
+                k = len(players.get_player_list())
+            else:
+                k = len(players.get_player_list()) + random.randint(1, len(players.get_player_list())-1)
+
+            deck.playing_deck = random.choices(deck.playing_deck, k=k)
+
+            # deck > len players
+            # deck == len players
+            # deck < len players
+
+            # 1 test animal extinction and clearing
+
+
+
+            result = dict()
+            hand_card = dict()
+
+            for player in players.get_player_list():
+                for animal in player.get_player_animals():
+                    chance = randint(1, 4)
+                    if chance == 1:
+                        animal.increase_red_fish()
+                        result[player] = result.get(player, 0) + 1
+
+                    elif chance == 2:
+                        animal.add_single_animal_property('hibernation_ability')
+                        animal.to_hibernate()
+                        result[player] = result.get(player, 0) + 1
+                    elif chance == 3:
+                        animal.poisoned = True
+
+
+            extinction_phase = module.Extinction_Phase(players, deck)
+            extinction_phase.animal_extinction()
+            extinction_phase.cleaning()
+            extinction_phase.take_playing_cards()
+
+            for player in players.get_player_list():
+                self.assertEqual(len(player.get_player_animals()), result.get(player, 0))
+                for animal in player.get_player_animals():
+                    self.assertEqual(animal.get_red_fish(), 0)
+                    self.assertEqual(animal.get_blue_fish(), 0)
+                    self.assertEqual(animal.hibernation_active, False)
+                if not player.get_player_animals():
+                    hand_card[player] = 6
+                else:
+                    pass
+                # todo write testr for random cards = mb plaers count % cards...
+
+
 
 if __name__ == '__main__':
     unittest.main()
