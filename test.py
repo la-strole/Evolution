@@ -1,9 +1,8 @@
 import module
 import unittest
 import random
-from unittest.mock import patch
-from random import randint, sample
-import subprocess
+
+from random import randint
 
 
 class TestEvolution(unittest.TestCase):
@@ -26,7 +25,6 @@ class TestEvolution(unittest.TestCase):
 
         return players
 
-    '''
     def test_Functions_exist_animals_to_hunt(self):
         """
         unit test for Functions_exist_animals_to_hunt()
@@ -265,6 +263,7 @@ class TestEvolution(unittest.TestCase):
 
         def user_input(*args):
             return '5'
+
         players = module.Players(user_input)
         players_list = players.get_player_list()
         # add grazing animlas to Player[0]
@@ -1474,8 +1473,6 @@ class TestEvolution(unittest.TestCase):
         self.assertEqual(victim1.is_alive(), True)
         self.assertEqual(victim3.is_alive(), True)
 
-    
-
     def test_eating_phase_function(self):
         """
         unit test for eating phase function
@@ -1566,7 +1563,7 @@ class TestEvolution(unittest.TestCase):
 
         # hand test
 
-        
+        '''
         players = TestEvolution.make_players_with_animals(2, 2)
 
         for player in players.get_player_list():
@@ -1618,26 +1615,23 @@ class TestEvolution(unittest.TestCase):
         extinction_phase = module.Extinction_Phase(players, deck)
 
         module.scoring(players)
-    '''
+
+        '''
 
     def test_extinction_phase(self):
         """
         unit test for extinction phase
         """
-        '''
+
         for _ in range(90):
             players = TestEvolution.make_players_with_animals(3, 4)
             deck = module.Deck(len(players.get_player_list()))
-
-
 
             # deck > len players
             # deck == len players
             # deck < len players
 
             # 1 test animal extinction and clearing
-
-
 
             result = dict()
             hand_card = dict()
@@ -1656,11 +1650,9 @@ class TestEvolution(unittest.TestCase):
                     elif chance == 3:
                         animal.poisoned = True
 
-
             extinction_phase = module.Extinction_Phase(players, deck)
             extinction_phase.animal_extinction()
             extinction_phase.cleaning()
-
 
             for player in players.get_player_list():
                 self.assertEqual(len(player.get_player_animals()), result.get(player, 0))
@@ -1669,7 +1661,6 @@ class TestEvolution(unittest.TestCase):
                     self.assertEqual(animal.get_blue_fish(), 0)
                     self.assertEqual(animal.hibernation_active, False)
 
-        '''
         # if there are a lot of cards
         number_of_players = 3
         players = TestEvolution.make_players_with_animals(number_of_players, randint(1, 3))
@@ -1684,8 +1675,6 @@ class TestEvolution(unittest.TestCase):
                 self.assertEqual(len(player.get_handcards()), len(player.get_player_animals()) + 1)
             else:
                 self.assertEqual(len(player.get_handcards()), 6)
-
-
 
 
 if __name__ == '__main__':
