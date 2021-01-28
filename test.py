@@ -1624,18 +1624,12 @@ class TestEvolution(unittest.TestCase):
         """
         unit test for extinction phase
         """
+        '''
         for _ in range(90):
             players = TestEvolution.make_players_with_animals(3, 4)
             deck = module.Deck(len(players.get_player_list()))
-            card_len = random.randint(1,3)
-            if card_len == 1:
-                k = len(players.get_player_list()) - random.randint(1, len(players.get_player_list())-1)
-            elif card_len == 2:
-                k = len(players.get_player_list())
-            else:
-                k = len(players.get_player_list()) + random.randint(1, len(players.get_player_list())-1)
 
-            deck.playing_deck = random.choices(deck.playing_deck, k=k)
+
 
             # deck > len players
             # deck == len players
@@ -1666,7 +1660,7 @@ class TestEvolution(unittest.TestCase):
             extinction_phase = module.Extinction_Phase(players, deck)
             extinction_phase.animal_extinction()
             extinction_phase.cleaning()
-            extinction_phase.take_playing_cards()
+
 
             for player in players.get_player_list():
                 self.assertEqual(len(player.get_player_animals()), result.get(player, 0))
@@ -1674,11 +1668,23 @@ class TestEvolution(unittest.TestCase):
                     self.assertEqual(animal.get_red_fish(), 0)
                     self.assertEqual(animal.get_blue_fish(), 0)
                     self.assertEqual(animal.hibernation_active, False)
-                if not player.get_player_animals():
-                    hand_card[player] = 6
-                else:
-                    pass
-                # todo write testr for random cards = mb plaers count % cards...
+
+        '''
+        # if there are a lot of cards
+        number_of_players = 3
+        players = TestEvolution.make_players_with_animals(number_of_players, randint(1, 3))
+        players.get_player_list()[0].animals = []
+        deck = module.Deck(number_of_players)
+
+        extinction_phase = module.Extinction_Phase(players, deck)
+        extinction_phase.take_playing_cards()
+
+        for player in players.get_player_list():
+            if player.get_player_animals():
+                self.assertEqual(len(player.get_handcards()), len(player.get_player_animals()) + 1)
+            else:
+                self.assertEqual(len(player.get_handcards()), 6)
+
 
 
 

@@ -2414,7 +2414,7 @@ class Extinction_Phase:
         assume all hungry animals already died
         return None
         """
-        excluded_list = []
+        excluded_list = set()
 
         can_take_cards = dict()
 
@@ -2428,14 +2428,19 @@ class Extinction_Phase:
         player = self.players.first_number_player
 
         while len(excluded_list) != len(self.players_list):
+            #print(f'{player.get_player_name()}: hand cards: {player.get_handcards()}')
 
             # if deck is empty
             if len(self.deck.get_playing_deck()) == 0:
                 break
 
+            if player in excluded_list:
+                player = self.players.next_player(player)
+
             # if player took max number of cards
             if can_take_cards[player][0] == can_take_cards[player][1]:
-                excluded_list.append(player)
+                excluded_list.add(player)
+                player = self.players.next_player(player)
                 continue
 
             player.put_handcard(self.deck.take_deckcards()[0])
@@ -2521,15 +2526,18 @@ def game():
         for _ in range(6):
             player.put_handcard(deck.take_deckcards()[0])
 
+    hibernate_list = []
     while len(deck.get_playing_deck()) > 0:
+
         development_phase = Development_Phase(players)
 
         define_eating_base_phase = Define_Eating_Base_Phase(players)
         food = define_eating_base_phase.get_food_count()
         print(define_eating_base_phase.get_text_of_phase())
 
-        eating_phase = Eating_Phase(players, food, [])
+        eating_phase = Eating_Phase(players, food, hibernate_list)
         eating_phase.eating_phase()
+        hibernate_list = eating_phase.new_hibernate_list.copy()
 
         extinction_phase = Extinction_Phase(players, deck)
         extinction_phase.extinction_phase()
@@ -2538,7 +2546,9 @@ def game():
 
     # last turn
     print('last turn')
+
     development_phase = Development_Phase(players)
+
     define_eating_base_phase = Define_Eating_Base_Phase(players)
     food = define_eating_base_phase.get_food_count()
     print(define_eating_base_phase.get_text_of_phase())
@@ -2555,5 +2565,4 @@ def game():
 if __name__ == "__main__":
     game()
 
-# change deck in make cards function - was changed to min value
-# todo problem with take cards - two alive animals . tree cards on gand and take only 2 cards...
+
