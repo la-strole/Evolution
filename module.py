@@ -1,5 +1,4 @@
 """
-Created on 15 10 2017
 @author: zhenya.aka.john@gmail.com
 """
 from random import shuffle, randint, choice
